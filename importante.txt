@@ -1,0 +1,1 @@
+el registro no esta funcioanado modificar para que solo verifique la ficha y no el nombre que ingrese 
