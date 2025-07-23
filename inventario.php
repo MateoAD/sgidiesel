@@ -62,6 +62,566 @@ $herramientas = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="css/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+    // Variables globales
+    let herramientaActual = null;
+    let tipoActual = '';
+    
+
+    // Utilitarios
+    const $ = id => document.getElementById(id);
+    const $$ = selector => document.querySelectorAll(selector);
+
+    // =============================================
+    // FUNCIONES DE MODALES (AHORA EN ÁMBITO GLOBAL)
+    // =============================================
+
+    // Función para mostrar modal de agregar
+    function mostrarModalAgregar() {
+        // Resetear el formulario
+        $('formEditar').reset();
+
+        // Resetear la vista previa de la foto
+        const fotoPreview = $('fotoActual');
+        const sinFoto = $('sinFoto');
+        if (fotoPreview) fotoPreview.classList.add('hidden');
+        if (sinFoto) sinFoto.classList.remove('hidden');
+
+        // Configurar el modal para agregar
+        $('modalEditarTitulo').textContent = 'Agregar Herramienta';
+        $('editId').value = '';
+        $('editTipo').value = tipoActual;
+
+        // Configurar opciones de estado según el tipo
+        const estadoSelect = $('editEstado');
+        const estadoContainer = $('editEstadoContainer');
+        const cantidadContainer = $('editCantidadContainer');
+
+        if (tipoActual === 'no_consumible') {
+            if (estadoContainer) estadoContainer.style.display = 'none';
+            if (cantidadContainer) cantidadContainer.style.display = 'block';
+        } else {
+            if (estadoContainer) {
+                estadoContainer.style.display = 'block';
+                if (estadoSelect) {
+                    estadoSelect.innerHTML = `
+                    <option value="lleno">Stock lleno</option>
+                    <option value="medio">Stock medio</option>
+                    <option value="recargar">Necesita recarga</option>
+                `;
+                }
+            }
+            if (cantidadContainer) cantidadContainer.style.display = 'block';
+        }
+
+        // Set default values
+        $('editUbicacion').value = 'Taller';
+        $('editCantidad').value = '1';
+
+        // Agregar evento para vista previa de foto
+        const inputFoto = $('editFoto');
+        if (inputFoto) {
+            inputFoto.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        if (fotoPreview) {
+                            fotoPreview.src = e.target.result;
+                            fotoPreview.classList.remove('hidden');
+                            if (sinFoto) sinFoto.classList.add('hidden');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Mostrar el modal centrado
+        const modal = $('modalEditar');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex', 'items-center', 'justify-center');
+    }
+
+    // Función para mostrar modal de QR
+    function mostrarModalQR() {
+        const modal = $('modalQR');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex', 'items-center', 'justify-center');
+        $('codigoQR').value = '';
+        $('qrContainer').innerHTML = '';
+        $('btnDescargarQR').classList.add('hidden');
+    }
+
+    // Función para mostrar modal de CSV
+    function mostrarModalCSV() {
+        const modal = $('csvModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'items-center', 'justify-center');
+        }
+    }
+
+    // Función para cambiar entre categorías
+    function cambiarCategoria(tipo) {
+        window.location.href = `?tipo=${tipo}`;
+    }
+
+    // Función para mostrar modal de editar
+    async function mostrarModalEditar(id, tipo) {
+        try {
+            const response = await fetch(`includes/obtener_herramienta.php?id=${id}&tipo=${tipo}`);
+
+            if (!response.ok) {
+                throw new Error('Error al obtener los datos');
+            }
+
+            const data = await response.json();
+
+            if (!data || data.error) {
+                throw new Error(data?.message || 'Herramienta no encontrada');
+            }
+
+            // Llenar el formulario de edición
+            $('modalEditarTitulo').textContent = 'Editar Herramienta';
+            $('editId').value = data.id;
+            $('editTipo').value = tipo;
+            $('editNombre').value = data.nombre || '';
+            $('editCantidad').value = data.cantidad || 0;
+            $('editDescripcion').value = data.descripcion || '';
+
+            // Manejar la visualización de la foto
+            const fotoActual = $('fotoActual');
+            const sinFoto = $('sinFoto');
+            if (data.foto) {
+                fotoActual.src = `/SGSDIESEL/uploads/herramientas/${data.foto}`;
+                fotoActual.classList.remove('hidden');
+                sinFoto.classList.add('hidden');
+            } else {
+                fotoActual.classList.add('hidden');
+                sinFoto.classList.remove('hidden');
+            }
+
+            // Si existe el campo de estado y es consumible, establecer el valor
+            const estadoSelect = $('editEstado');
+            if (estadoSelect && tipo === 'consumible' && data.estado) {
+                estadoSelect.value = data.estado;
+            }
+
+            // Mostrar el modal centrado
+            const modal = $('modalEditar');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'items-center', 'justify-center');
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message);
+        }
+    }
+
+    // Función para mostrar modal de confirmación de eliminación
+    function mostrarModalEliminar(id, tipo) {
+        herramientaActual = { id, tipo };
+        $('modalEliminarTitulo').textContent =
+            `Eliminar ${tipo === 'no_consumible' ? 'Herramienta' : 'Material'}`;
+        $('modalEliminarMensaje').textContent =
+            `¿Estás seguro de que deseas eliminar esta ${tipo === 'no_consumible' ? 'herramienta' : 'material'}? Esta acción no se puede deshacer.`;
+
+        const modal = $('modalEliminar');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex', 'items-center', 'justify-center');
+    }
+
+    // Función unificada para cerrar modales
+    function cerrarModal(modalId) {
+        const modal = $(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex', 'items-center', 'justify-center');
+        }
+    }
+
+    // Funciones específicas para cada modal
+    function cerrarModalAgregar() {
+        cerrarModal('addToolModal');
+        $('addToolForm').reset();
+    }
+
+    function cerrarModalEditar() {
+        cerrarModal('modalEditar');
+    }
+
+    function cerrarModalEliminar() {
+        cerrarModal('modalEliminar');
+    }
+
+    function cerrarModalCSV() {
+        cerrarModal('csvModal');
+    }
+
+    function cerrarModalQR() {
+        cerrarModal('modalQR');
+    }
+
+    function cerrarModalBaja() {
+        cerrarModal('modalBajaHerramienta');
+        $('formBajaHerramienta').reset();
+    }
+
+    // Función para guardar herramienta (agregar o editar)
+    async function guardarEdicion() {
+        const form = $('formEditar');
+        const formData = new FormData(form);
+        const id = formData.get('id');
+        const url = id ? 'includes/actualizar_herramienta.php' : 'includes/agregar_herramienta.php';
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(id ? 'Cambios guardados correctamente' : 'Herramienta agregada correctamente');
+                cerrarModal('modalEditar');
+                location.reload();
+            } else {
+                throw new Error(data.message || 'Error al guardar los cambios');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    // Funciones para el modal QR
+    function generarQR() {
+        const codigo = $('codigoQR').value.trim();
+        if (!codigo) {
+            alert('Por favor ingrese un código');
+            return;
+        }
+
+        const qrContainer = $('qrContainer');
+        qrContainer.innerHTML = '';
+
+        try {
+            new QRCode(qrContainer, {
+                text: codigo,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            $('btnDescargarQR').classList.remove('hidden');
+        } catch (error) {
+            console.error('Error generando QR:', error);
+            alert('Error al generar el QR');
+        }
+    }
+
+    function descargarQR() {
+        const canvas = document.querySelector('#qrContainer canvas');
+        if (!canvas) {
+            alert('Primero genere un QR');
+            return;
+        }
+
+        const nombre = $('nombreQR').value.trim() ||
+            'codigo_qr_' + $('codigoQR').value;
+
+        const enlace = document.createElement('a');
+        enlace.href = canvas.toDataURL('image/png');
+        enlace.download = nombre + '.png';
+        enlace.click();
+    }
+
+    // Función para eliminar herramienta
+    async function confirmarEliminacion() {
+        if (!herramientaActual) return;
+
+        const { id, tipo } = herramientaActual;
+
+        try {
+            const response = await fetch('includes/eliminar_herramienta.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, tipo })
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`El servidor respondió con: ${text}`);
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Error al eliminar');
+            }
+
+            alert('Herramienta eliminada correctamente');
+            cerrarModal('modalEliminar');
+            location.reload();
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Error al eliminar: ${error.message}`);
+        }
+    }
+
+    // Función para buscar herramientas
+    function buscarHerramientas(termino) {
+        const filas = $$('#tablaHerramientas tr');
+        termino = termino.toLowerCase();
+
+        filas.forEach(fila => {
+            const textoFila = fila.textContent.toLowerCase();
+            fila.style.display = textoFila.includes(termino) ? '' : 'none';
+        });
+    }
+
+    // Función para mostrar modal de baja
+    function abrirModalBaja(id, tipo, nombre) {
+        $('herramientaId').value = id;
+        $('herramientaTipo').value = tipo;
+        $('nombreHerramienta').value = nombre;
+
+        const modal = $('modalBajaHerramienta');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex', 'items-center', 'justify-center');
+    }
+
+    // Función general para mostrar cualquier modal
+    function mostrarModal(id, titulo) {
+        if (!id || id === 'modalEditar') {
+            mostrarModalAgregar();
+            return;
+        }
+
+        const modal = $(id);
+        if (modal) {
+            if (titulo) {
+                const modalTitle = modal.querySelector('.modal-title');
+                if (modalTitle) {
+                    modalTitle.textContent = titulo;
+                }
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'items-center', 'justify-center');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+    }
+
+    // Configurar eventos cuando el DOM esté cargado
+    document.addEventListener('DOMContentLoaded', function () {
+        // Obtener el tipo actual de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        tipoActual = urlParams.get('tipo') || 'no_consumible';
+
+
+
+        // Asignar eventos a todos los botones de cierre de modal
+        $$('.modal-close').forEach(button => {
+            button.addEventListener('click', function () {
+                const modal = this.closest('.modal');
+                if (modal) {
+                    cerrarModal(modal.id);
+                }
+            });
+        });
+
+        // Cerrar modales al hacer clic fuera del contenido
+        $$('.modal').forEach(modal => {
+            modal.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    cerrarModal(this.id);
+                }
+            });
+        });
+
+        // Configurar formularios para cerrar modales después de enviar
+        const configureForm = (formId, modalId) => {
+            const form = $(formId);
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                cerrarModal(modalId);
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 500);
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error al procesar la solicitud');
+                        });
+                });
+            }
+        };
+
+        // Configurar formularios
+        configureForm('addToolForm', 'addToolModal');
+
+        // Campo de búsqueda
+        const campoBusqueda = $('buscarHerramienta');
+        if (campoBusqueda) {
+            campoBusqueda.addEventListener('input', function (e) {
+                buscarHerramientas(e.target.value);
+            });
+        }
+
+        // Prevenir envío del formulario de edición
+        const formEditar = $('formEditar');
+        if (formEditar) {
+            formEditar.addEventListener('submit', function (e) {
+                e.preventDefault();
+                guardarEdicion();
+            });
+        }
+
+        // Manejo del formulario de subida masiva CSV
+        const csvForm = $('csvForm');
+        if (csvForm) {
+            csvForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(csvForm);
+
+                fetch(csvForm.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(async (response) => {
+                        const text = await response.text();
+                        try {
+                            const data = JSON.parse(text);
+                            if (data.success) {
+                                alert("Archivo subido exitosamente");
+                                window.location.reload();
+                            } else {
+                                alert("Error del servidor: " + (data.message || "Error desconocido"));
+                            }
+                        } catch (err) {
+                            console.error("La respuesta no fue JSON:", text);
+                            alert("El servidor devolvió una respuesta no válida. Verifica errores en el servidor.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error en fetch:", error);
+                        alert("Error inesperado: " + error.message);
+                    });
+            });
+        }
+
+        // Configurar formulario de baja
+        const formBaja = $('formBajaHerramienta');
+        if (formBaja) {
+            formBaja.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const formData = {
+                    herramienta_id: $('herramientaId').value,
+                    tipo: $('herramientaTipo').value,
+                    cantidad: parseInt($('cantidadBaja').value),
+                    motivo: $('motivoSalida').value,
+                    lugar_salida: $('lugarSalida').value,
+                    lugar_entrada: $('lugarEntrada').value,
+                    responsable: $('responsable').value
+                };
+
+                try {
+                    const response = await fetch('includes/procesar_baja.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        alert('Baja procesada correctamente');
+                        cerrarModalBaja();
+                        location.reload();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error al procesar la baja:', error);
+                    alert('Error al procesar la baja');
+                }
+            });
+        }
+
+        // Configurar eventos de escape para cerrar modales
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                // Cerrar todos los modales visibles
+                $$('.modal').forEach(modal => {
+                    if (!modal.classList.contains('hidden')) {
+                        cerrarModal(modal.id);
+                    }
+                });
+            }
+        });
+    });
+
+    function mostrarModal(id, titulo) {
+    const modal = document.getElementById(id);
+    if (!modal) {
+        console.error(`Modal con ID '${id}' no encontrado`);
+        return;
+    }
+
+    // Limpiar cualquier contenido previo si es necesario
+    if (id === 'modalQR') {
+        document.getElementById('codigoQR').value = '';
+        document.getElementById('qrContainer').innerHTML = '';
+        document.getElementById('btnDescargarQR').classList.add('hidden');
+    } else if (id === 'csvModal') {
+        const csvForm = document.getElementById('csvForm');
+        if (csvForm) csvForm.reset();
+    } else if (id === 'modalEditar') {
+        document.getElementById('formEditar').reset();
+        const fotoPreview = document.getElementById('fotoActual');
+        const sinFoto = document.getElementById('sinFoto');
+        if (fotoPreview) fotoPreview.classList.add('hidden');
+        if (sinFoto) sinFoto.classList.remove('hidden');
+    }
+
+    // Actualizar el título si existe
+    if (titulo) {
+        const modalTitle = modal.querySelector('.modal-title');
+        if (modalTitle) modalTitle.textContent = titulo;
+    }
+
+    // Mostrar el modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex', 'items-center', 'justify-center');
+    modal.setAttribute('aria-hidden', 'false');
+}
+</script>
     <style>
         body {
             background-image: url('./img/fondo_inventario.png');
@@ -966,565 +1526,6 @@ $herramientas = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
 </body>
-<script>
-    // Variables globales
-    let herramientaActual = null;
-    let tipoActual = '';
-    
 
-    // Utilitarios
-    const $ = id => document.getElementById(id);
-    const $$ = selector => document.querySelectorAll(selector);
-
-    // =============================================
-    // FUNCIONES DE MODALES (AHORA EN ÁMBITO GLOBAL)
-    // =============================================
-
-    // Función para mostrar modal de agregar
-    function mostrarModalAgregar() {
-        // Resetear el formulario
-        $('formEditar').reset();
-
-        // Resetear la vista previa de la foto
-        const fotoPreview = $('fotoActual');
-        const sinFoto = $('sinFoto');
-        if (fotoPreview) fotoPreview.classList.add('hidden');
-        if (sinFoto) sinFoto.classList.remove('hidden');
-
-        // Configurar el modal para agregar
-        $('modalEditarTitulo').textContent = 'Agregar Herramienta';
-        $('editId').value = '';
-        $('editTipo').value = tipoActual;
-
-        // Configurar opciones de estado según el tipo
-        const estadoSelect = $('editEstado');
-        const estadoContainer = $('editEstadoContainer');
-        const cantidadContainer = $('editCantidadContainer');
-
-        if (tipoActual === 'no_consumible') {
-            if (estadoContainer) estadoContainer.style.display = 'none';
-            if (cantidadContainer) cantidadContainer.style.display = 'block';
-        } else {
-            if (estadoContainer) {
-                estadoContainer.style.display = 'block';
-                if (estadoSelect) {
-                    estadoSelect.innerHTML = `
-                    <option value="lleno">Stock lleno</option>
-                    <option value="medio">Stock medio</option>
-                    <option value="recargar">Necesita recarga</option>
-                `;
-                }
-            }
-            if (cantidadContainer) cantidadContainer.style.display = 'block';
-        }
-
-        // Set default values
-        $('editUbicacion').value = 'Taller';
-        $('editCantidad').value = '1';
-
-        // Agregar evento para vista previa de foto
-        const inputFoto = $('editFoto');
-        if (inputFoto) {
-            inputFoto.addEventListener('change', function (e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        if (fotoPreview) {
-                            fotoPreview.src = e.target.result;
-                            fotoPreview.classList.remove('hidden');
-                            if (sinFoto) sinFoto.classList.add('hidden');
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // Mostrar el modal centrado
-        const modal = $('modalEditar');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex', 'items-center', 'justify-center');
-    }
-
-    // Función para mostrar modal de QR
-    function mostrarModalQR() {
-        const modal = $('modalQR');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex', 'items-center', 'justify-center');
-        $('codigoQR').value = '';
-        $('qrContainer').innerHTML = '';
-        $('btnDescargarQR').classList.add('hidden');
-    }
-
-    // Función para mostrar modal de CSV
-    function mostrarModalCSV() {
-        const modal = $('csvModal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex', 'items-center', 'justify-center');
-        }
-    }
-
-    // Función para cambiar entre categorías
-    function cambiarCategoria(tipo) {
-        window.location.href = `?tipo=${tipo}`;
-    }
-
-    // Función para mostrar modal de editar
-    async function mostrarModalEditar(id, tipo) {
-        try {
-            const response = await fetch(`includes/obtener_herramienta.php?id=${id}&tipo=${tipo}`);
-
-            if (!response.ok) {
-                throw new Error('Error al obtener los datos');
-            }
-
-            const data = await response.json();
-
-            if (!data || data.error) {
-                throw new Error(data?.message || 'Herramienta no encontrada');
-            }
-
-            // Llenar el formulario de edición
-            $('modalEditarTitulo').textContent = 'Editar Herramienta';
-            $('editId').value = data.id;
-            $('editTipo').value = tipo;
-            $('editNombre').value = data.nombre || '';
-            $('editCantidad').value = data.cantidad || 0;
-            $('editDescripcion').value = data.descripcion || '';
-
-            // Manejar la visualización de la foto
-            const fotoActual = $('fotoActual');
-            const sinFoto = $('sinFoto');
-            if (data.foto) {
-                fotoActual.src = `/SGSDIESEL/uploads/herramientas/${data.foto}`;
-                fotoActual.classList.remove('hidden');
-                sinFoto.classList.add('hidden');
-            } else {
-                fotoActual.classList.add('hidden');
-                sinFoto.classList.remove('hidden');
-            }
-
-            // Si existe el campo de estado y es consumible, establecer el valor
-            const estadoSelect = $('editEstado');
-            if (estadoSelect && tipo === 'consumible' && data.estado) {
-                estadoSelect.value = data.estado;
-            }
-
-            // Mostrar el modal centrado
-            const modal = $('modalEditar');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex', 'items-center', 'justify-center');
-        } catch (error) {
-            console.error('Error:', error);
-            alert(error.message);
-        }
-    }
-
-    // Función para mostrar modal de confirmación de eliminación
-    function mostrarModalEliminar(id, tipo) {
-        herramientaActual = { id, tipo };
-        $('modalEliminarTitulo').textContent =
-            `Eliminar ${tipo === 'no_consumible' ? 'Herramienta' : 'Material'}`;
-        $('modalEliminarMensaje').textContent =
-            `¿Estás seguro de que deseas eliminar esta ${tipo === 'no_consumible' ? 'herramienta' : 'material'}? Esta acción no se puede deshacer.`;
-
-        const modal = $('modalEliminar');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex', 'items-center', 'justify-center');
-    }
-
-    // Función unificada para cerrar modales
-    function cerrarModal(modalId) {
-        const modal = $(modalId);
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex', 'items-center', 'justify-center');
-        }
-    }
-
-    // Funciones específicas para cada modal
-    function cerrarModalAgregar() {
-        cerrarModal('addToolModal');
-        $('addToolForm').reset();
-    }
-
-    function cerrarModalEditar() {
-        cerrarModal('modalEditar');
-    }
-
-    function cerrarModalEliminar() {
-        cerrarModal('modalEliminar');
-    }
-
-    function cerrarModalCSV() {
-        cerrarModal('csvModal');
-    }
-
-    function cerrarModalQR() {
-        cerrarModal('modalQR');
-    }
-
-    function cerrarModalBaja() {
-        cerrarModal('modalBajaHerramienta');
-        $('formBajaHerramienta').reset();
-    }
-
-    // Función para guardar herramienta (agregar o editar)
-    async function guardarEdicion() {
-        const form = $('formEditar');
-        const formData = new FormData(form);
-        const id = formData.get('id');
-        const url = id ? 'includes/actualizar_herramienta.php' : 'includes/agregar_herramienta.php';
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-
-            const data = await response.json();
-
-            if (data.success) {
-                alert(id ? 'Cambios guardados correctamente' : 'Herramienta agregada correctamente');
-                cerrarModal('modalEditar');
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Error al guardar los cambios');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert(`Error: ${error.message}`);
-        }
-    }
-
-    // Funciones para el modal QR
-    function generarQR() {
-        const codigo = $('codigoQR').value.trim();
-        if (!codigo) {
-            alert('Por favor ingrese un código');
-            return;
-        }
-
-        const qrContainer = $('qrContainer');
-        qrContainer.innerHTML = '';
-
-        try {
-            new QRCode(qrContainer, {
-                text: codigo,
-                width: 200,
-                height: 200,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-            $('btnDescargarQR').classList.remove('hidden');
-        } catch (error) {
-            console.error('Error generando QR:', error);
-            alert('Error al generar el QR');
-        }
-    }
-
-    function descargarQR() {
-        const canvas = document.querySelector('#qrContainer canvas');
-        if (!canvas) {
-            alert('Primero genere un QR');
-            return;
-        }
-
-        const nombre = $('nombreQR').value.trim() ||
-            'codigo_qr_' + $('codigoQR').value;
-
-        const enlace = document.createElement('a');
-        enlace.href = canvas.toDataURL('image/png');
-        enlace.download = nombre + '.png';
-        enlace.click();
-    }
-
-    // Función para eliminar herramienta
-    async function confirmarEliminacion() {
-        if (!herramientaActual) return;
-
-        const { id, tipo } = herramientaActual;
-
-        try {
-            const response = await fetch('includes/eliminar_herramienta.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id, tipo })
-            });
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                throw new Error(`El servidor respondió con: ${text}`);
-            }
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Error al eliminar');
-            }
-
-            alert('Herramienta eliminada correctamente');
-            cerrarModal('modalEliminar');
-            location.reload();
-        } catch (error) {
-            console.error('Error:', error);
-            alert(`Error al eliminar: ${error.message}`);
-        }
-    }
-
-    // Función para buscar herramientas
-    function buscarHerramientas(termino) {
-        const filas = $$('#tablaHerramientas tr');
-        termino = termino.toLowerCase();
-
-        filas.forEach(fila => {
-            const textoFila = fila.textContent.toLowerCase();
-            fila.style.display = textoFila.includes(termino) ? '' : 'none';
-        });
-    }
-
-    // Función para mostrar modal de baja
-    function abrirModalBaja(id, tipo, nombre) {
-        $('herramientaId').value = id;
-        $('herramientaTipo').value = tipo;
-        $('nombreHerramienta').value = nombre;
-
-        const modal = $('modalBajaHerramienta');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex', 'items-center', 'justify-center');
-    }
-
-    // Función general para mostrar cualquier modal
-    function mostrarModal(id, titulo) {
-        if (!id || id === 'modalEditar') {
-            mostrarModalAgregar();
-            return;
-        }
-
-        const modal = $(id);
-        if (modal) {
-            if (titulo) {
-                const modalTitle = modal.querySelector('.modal-title');
-                if (modalTitle) {
-                    modalTitle.textContent = titulo;
-                }
-            }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex', 'items-center', 'justify-center');
-            modal.setAttribute('aria-hidden', 'false');
-        }
-    }
-
-    // Configurar eventos cuando el DOM esté cargado
-    document.addEventListener('DOMContentLoaded', function () {
-        // Obtener el tipo actual de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        tipoActual = urlParams.get('tipo') || 'no_consumible';
-
-
-
-        // Asignar eventos a todos los botones de cierre de modal
-        $$('.modal-close').forEach(button => {
-            button.addEventListener('click', function () {
-                const modal = this.closest('.modal');
-                if (modal) {
-                    cerrarModal(modal.id);
-                }
-            });
-        });
-
-        // Cerrar modales al hacer clic fuera del contenido
-        $$('.modal').forEach(modal => {
-            modal.addEventListener('click', function (e) {
-                if (e.target === this) {
-                    cerrarModal(this.id);
-                }
-            });
-        });
-
-        // Configurar formularios para cerrar modales después de enviar
-        const configureForm = (formId, modalId) => {
-            const form = $(formId);
-            if (form) {
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    const formData = new FormData(this);
-
-                    fetch(this.action, {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                cerrarModal(modalId);
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 500);
-                            } else {
-                                alert('Error: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Error al procesar la solicitud');
-                        });
-                });
-            }
-        };
-
-        // Configurar formularios
-        configureForm('addToolForm', 'addToolModal');
-
-        // Campo de búsqueda
-        const campoBusqueda = $('buscarHerramienta');
-        if (campoBusqueda) {
-            campoBusqueda.addEventListener('input', function (e) {
-                buscarHerramientas(e.target.value);
-            });
-        }
-
-        // Prevenir envío del formulario de edición
-        const formEditar = $('formEditar');
-        if (formEditar) {
-            formEditar.addEventListener('submit', function (e) {
-                e.preventDefault();
-                guardarEdicion();
-            });
-        }
-
-        // Manejo del formulario de subida masiva CSV
-        const csvForm = $('csvForm');
-        if (csvForm) {
-            csvForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const formData = new FormData(csvForm);
-
-                fetch(csvForm.action, {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(async (response) => {
-                        const text = await response.text();
-                        try {
-                            const data = JSON.parse(text);
-                            if (data.success) {
-                                alert("Archivo subido exitosamente");
-                                window.location.reload();
-                            } else {
-                                alert("Error del servidor: " + (data.message || "Error desconocido"));
-                            }
-                        } catch (err) {
-                            console.error("La respuesta no fue JSON:", text);
-                            alert("El servidor devolvió una respuesta no válida. Verifica errores en el servidor.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error en fetch:", error);
-                        alert("Error inesperado: " + error.message);
-                    });
-            });
-        }
-
-        // Configurar formulario de baja
-        const formBaja = $('formBajaHerramienta');
-        if (formBaja) {
-            formBaja.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const formData = {
-                    herramienta_id: $('herramientaId').value,
-                    tipo: $('herramientaTipo').value,
-                    cantidad: parseInt($('cantidadBaja').value),
-                    motivo: $('motivoSalida').value,
-                    lugar_salida: $('lugarSalida').value,
-                    lugar_entrada: $('lugarEntrada').value,
-                    responsable: $('responsable').value
-                };
-
-                try {
-                    const response = await fetch('includes/procesar_baja.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        alert('Baja procesada correctamente');
-                        cerrarModalBaja();
-                        location.reload();
-                    } else {
-                        alert('Error: ' + result.message);
-                    }
-                } catch (error) {
-                    console.error('Error al procesar la baja:', error);
-                    alert('Error al procesar la baja');
-                }
-            });
-        }
-
-        // Configurar eventos de escape para cerrar modales
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                // Cerrar todos los modales visibles
-                $$('.modal').forEach(modal => {
-                    if (!modal.classList.contains('hidden')) {
-                        cerrarModal(modal.id);
-                    }
-                });
-            }
-        });
-    });
-
-    function mostrarModal(id, titulo) {
-    const modal = document.getElementById(id);
-    if (!modal) {
-        console.error(`Modal con ID '${id}' no encontrado`);
-        return;
-    }
-
-    // Limpiar cualquier contenido previo si es necesario
-    if (id === 'modalQR') {
-        document.getElementById('codigoQR').value = '';
-        document.getElementById('qrContainer').innerHTML = '';
-        document.getElementById('btnDescargarQR').classList.add('hidden');
-    } else if (id === 'csvModal') {
-        const csvForm = document.getElementById('csvForm');
-        if (csvForm) csvForm.reset();
-    } else if (id === 'modalEditar') {
-        document.getElementById('formEditar').reset();
-        const fotoPreview = document.getElementById('fotoActual');
-        const sinFoto = document.getElementById('sinFoto');
-        if (fotoPreview) fotoPreview.classList.add('hidden');
-        if (sinFoto) sinFoto.classList.remove('hidden');
-    }
-
-    // Actualizar el título si existe
-    if (titulo) {
-        const modalTitle = modal.querySelector('.modal-title');
-        if (modalTitle) modalTitle.textContent = titulo;
-    }
-
-    // Mostrar el modal
-    modal.classList.remove('hidden');
-    modal.classList.add('flex', 'items-center', 'justify-center');
-    modal.setAttribute('aria-hidden', 'false');
-}
-</script>
 
 </html>

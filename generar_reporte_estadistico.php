@@ -1,7 +1,7 @@
 <?php
 // Desactivar toda notificación de errores para evitar salidas no deseadas
 error_reporting(0);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 
 // Iniciar buffer de salida al principio
 ob_start();
