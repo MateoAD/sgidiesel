@@ -1088,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <?php if (!empty($herramienta['foto'])): ?>
                                         <?php
                                         // Usar ruta absoluta desde la raíz del servidor web
-                                        $rutaImagen = '/SGSDIESEL/uploads/herramientas/' . htmlspecialchars($herramienta['foto']);
+                                        $rutaImagen = '/sgidiesel/uploads/herramientas/' . htmlspecialchars($herramienta['foto']);
                                         ?>
                                         <img src="<?= $rutaImagen ?>" alt="<?= htmlspecialchars($herramienta['nombre']) ?>"
                                             class="h-12 w-12 object-cover rounded-md"
