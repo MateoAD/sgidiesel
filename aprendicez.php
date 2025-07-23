@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <!-- Style -->
     <style>
         .loading-spinner {
@@ -79,22 +79,39 @@ if (!isset($_SESSION['user_id'])) {
 
 <body class="bg-gray-100 min-h-screen">
 
-    <header class="bg-[#4A655D] text-white shadow-lg" style="background-color: #4A655D !important;">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <div class="container mx-auto flex items-center px-4 py-3">
-            <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto mr-4">
-            <div>
-                <h1 class="text-xl font-bold">APRENDICES</h1>
+    <!-- Modal System -->
+    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div id="modalHeader" class="flex justify-between items-center border-b px-5 py-4">
+                <div class="flex items-center">
+                    <i id="modalIcon" class="text-2xl mr-3"></i>
+                    <h3 id="modalTitle" class="text-lg font-semibold"></h3>
+                </div>
+                <button onclick="hideModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+            <div id="modalContent" class="p-5 text-gray-700"></div>
+            <div id="modalActions" class="flex justify-end px-5 py-4 border-t"></div>
         </div>
-        
-        <!-- Dropdown Menu -->
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" class="bg-[#05976A] hover:bg-[#4A655D] px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center text-white">
-                <i class="fas fa-bars mr-2"></i>
-                <span>Menú</span>
-            </button>
+    </div>
+
+    <header class="bg-[#4A655D] text-white shadow-lg" style="background-color: #4A655D !important;">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="container mx-auto flex items-center px-4 py-3">
+                <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto mr-4">
+                <div>
+                    <h1 class="text-xl font-bold">APRENDICES</h1>
+                </div>
+            </div>
             
+            <!-- Dropdown Menu -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" class="bg-[#05976A] hover:bg-[#4A655D] px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center text-white">
+                    <i class="fas fa-bars mr-2"></i>
+                    <span>Menú</span>
+                </button>
+                
                 <!-- Overlay -->
                 <div x-show="open" class="fixed inset-0 bg-black bg-opacity-50 z-40" @click="open = false"></div>
                 
@@ -139,7 +156,8 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
     </header>
-    <div id="reportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center">
+
+    <div id="reportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-gray-900">Reportes del Aprendiz</h3>
@@ -152,6 +170,7 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
     </div>
+
     <main class="container mx-auto px-4 py-8">
         <!-- Panel Principal -->
         <div
@@ -244,7 +263,7 @@ if (!isset($_SESSION['user_id'])) {
                     </form>
                 </div>
 
-                <!-- Add the table section here, before closing main -->
+                <!-- Tabla de aprendices -->
                 <div class="mt-8 bg-white shadow-lg rounded-lg overflow-hidden">
                     <div class="bg-gray-800 text-white text-center py-4">
                         <h2 class="text-xl font-bold">Consulta de Aprendices por Ficha</h2>
@@ -287,9 +306,128 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
     </main>
 
     <script>
+        // Sistema de Modales
+        function showModal(type, title, message, options = {}) {
+            const modal = document.getElementById('modalSystem');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalHeader = document.getElementById('modalHeader');
+            const modalActions = document.getElementById('modalActions');
+
+            if (modal.timeoutId) {
+                clearTimeout(modal.timeoutId);
+                delete modal.timeoutId;
+            }
+
+            switch(type) {
+                case 'error':
+                    modalIcon.className = 'fas fa-exclamation-triangle text-red-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-red-100 px-5 py-4 bg-red-50';
+                    break;
+                case 'warning':
+                    modalIcon.className = 'fas fa-exclamation-triangle text-orange-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-orange-100 px-5 py-4 bg-orange-50';
+                    break;
+                case 'success':
+                    modalIcon.className = 'fas fa-check-circle text-green-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-green-100 px-5 py-4 bg-green-50';
+                    break;
+                case 'confirm':
+                    modalIcon.className = 'fas fa-question-circle text-blue-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+                    break;
+                default: // info
+                    modalIcon.className = 'fas fa-info-circle text-blue-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+            }
+
+            modalTitle.textContent = title;
+            modalContent.innerHTML = message;
+
+            modalActions.innerHTML = '';
+            if (options.actions) {
+                options.actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.textContent = action.text;
+                    button.className = action.class || 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150';
+                    button.onclick = () => {
+                        if (action.handler) action.handler();
+                        if (action.close !== false) hideModal();
+                    };
+                    modalActions.appendChild(button);
+                });
+            } else {
+                modalActions.innerHTML = `
+                    <button onclick="hideModal()" 
+                            class="text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150">
+                        Cerrar
+                    </button>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const duration = options.duration || 6000;
+            if (duration > 0 && !options.persistent) {
+                modal.timeoutId = setTimeout(() => {
+                    hideModal();
+                }, Math.max(duration, 1000));
+            }
+        }
+
+        function hideModal() {
+            const modal = document.getElementById('modalSystem');
+            if (modal.timeoutId) {
+                clearTimeout(modal.timeoutId);
+                delete modal.timeoutId;
+            }
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function showError(message, title = 'Error', duration = 10000) {
+            showModal('error', title, message, { duration: Math.max(duration, 10000) });
+        }
+
+        function showWarning(message, title = 'Advertencia', duration = 8000) {
+            showModal('warning', title, message, { duration: Math.max(duration, 8000) });
+        }
+
+        function showInfo(message, title = 'Información', duration = 7000) {
+            showModal('info', title, message, { duration: Math.max(duration, 7000) });
+        }
+
+        function showSuccess(message, title = 'Éxito', duration = 1000) {
+            showModal('success', title, message, { duration: Math.max(duration, 1000) });
+        }
+
+        function showConfirm(message, title = 'Confirmar Acción', onConfirm) {
+            showModal('confirm', title, message, {
+                persistent: true,
+                actions: [
+                    {
+                        text: 'Aceptar',
+                        class: 'text-sm py-2 px-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150',
+                        handler: onConfirm,
+                        close: true
+                    },
+                    {
+                        text: 'Cancelar',
+                        class: 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150',
+                        close: true
+                    }
+                ]
+            });
+        }
+
+        // Funcionalidad para agregar más campos de aprendices
         document.getElementById('addMore').addEventListener('click', function () {
             const container = document.getElementById('apprenticesContainer');
             const newEntry = container.children[0].cloneNode(true);
@@ -297,12 +435,12 @@ if (!isset($_SESSION['user_id'])) {
             newEntry.querySelector('.remove-apprentice').style.display = 'block';
             container.appendChild(newEntry);
 
-            // Add remove functionality
             newEntry.querySelector('.remove-apprentice').addEventListener('click', function () {
                 newEntry.remove();
             });
         });
 
+        // Guardar aprendices
         document.getElementById('apprenticeForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
@@ -317,7 +455,7 @@ if (!isset($_SESSION['user_id'])) {
 
             // Validate inputs
             if (ficha === '' || nombres.length === 0) {
-                alert('Por favor complete todos los campos requeridos');
+                showError('Por favor complete todos los campos requeridos', 'Error de Validación');
                 return;
             }
 
@@ -338,13 +476,13 @@ if (!isset($_SESSION['user_id'])) {
             })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`Error HTTP: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
                     if (data.success) {
-                        alert('Aprendices guardados exitosamente');
+                        showSuccess(`Aprendices guardados exitosamente. Se agregaron ${nombres.length} aprendices.`, 'Éxito');
                         // Actualizar la tabla si hay una ficha seleccionada
                         const fichaSelect = document.getElementById('fichaSelect');
                         if (fichaSelect.value) {
@@ -366,7 +504,7 @@ if (!isset($_SESSION['user_id'])) {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error: ' + error.message);
+                    showError('Error al guardar los aprendices: ' + error.message, 'Error');
                 })
                 .finally(() => {
                     buttonText.textContent = 'Guardar Aprendices';
@@ -374,42 +512,52 @@ if (!isset($_SESSION['user_id'])) {
                 });
         });
 
+        // Eliminar ficha
         function deleteFicha(ficha) {
-    if (confirm('¿Está seguro de eliminar esta ficha completa?')) {
-        fetch('includes/delete_ficha.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ ficha: ficha })
-        })
-        .then(response => {
-            // Verificar si la respuesta es JSON válido
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json();
-            } else {
-                // Si no es JSON, obtener el texto y lanzar un error
-                return response.text().then(text => {
-                    throw new Error('Respuesta no válida del servidor: ' + text);
-                });
+            if (!ficha) {
+                showError('Por favor seleccione una ficha para eliminar', 'Error de Selección');
+                return;
             }
-        })
-        .then(data => {
-            if (data.success) {
-                loadFichas();
-                document.querySelector('#apprenticesTable tbody').innerHTML = '';
-            } else {
-                throw new Error(data.message || 'Error al eliminar la ficha');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al eliminar la ficha: ' + error.message);
-        });
-    }
-}
 
+            showConfirm(
+                '¿Está seguro de eliminar esta ficha completa? Esta acción no se puede deshacer.',
+                'Confirmar Eliminación de Ficha',
+                () => {
+                    fetch('includes/delete_ficha.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ ficha: ficha })
+                    })
+                    .then(response => {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            return response.json();
+                        } else {
+                            return response.text().then(text => {
+                                throw new Error('Respuesta no válida del servidor: ' + text);
+                            });
+                        }
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            showSuccess('Ficha eliminada correctamente', 'Éxito');
+                            loadFichas();
+                            document.querySelector('#apprenticesTable tbody').innerHTML = '';
+                        } else {
+                            throw new Error(data.message || 'Error al eliminar la ficha');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Error al eliminar la ficha: ' + error.message, 'Error');
+                    });
+                }
+            );
+        }
+
+        // Cargar fichas
         function loadFichas() {
             fetch('includes/get_fichas.php')
                 .then(response => response.json())
@@ -422,9 +570,11 @@ if (!isset($_SESSION['user_id'])) {
                 })
                 .catch(error => {
                     console.error('Error loading fichas:', error);
+                    showError('Error al cargar las fichas: ' + error.message, 'Error');
                 });
         }
 
+        // Cargar aprendices por ficha
         function loadApprenticesByFicha(ficha) {
             fetch(`includes/get_apprentices_by_ficha.php?ficha=${ficha}`)
                 .then(response => response.json())
@@ -433,127 +583,121 @@ if (!isset($_SESSION['user_id'])) {
                     tbody.innerHTML = '';
 
                     data.forEach(apprentice => {
-                        // Update the table row generation in loadApprenticesByFicha function
                         tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${apprentice.nombre}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${apprentice.ficha}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <button onclick="showReports(${apprentice.id})" class="text-blue-600 hover:text-blue-900">
-                                    ${apprentice.reportes} <i class="fas fa-eye ml-1"></i>
-                                </button>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                                <button onclick="deleteApprentice(${apprentice.id})" 
-                                        class="text-red-600 hover:text-red-900">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${apprentice.nombre}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${apprentice.ficha}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button onclick="showReports(${apprentice.id})" class="text-blue-600 hover:text-blue-900">
+                                        ${apprentice.reportes} <i class="fas fa-eye ml-1"></i>
+                                    </button>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                    <button onclick="deleteApprentice(${apprentice.id})" 
+                                            class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
                     });
                 })
                 .catch(error => {
                     console.error('Error loading apprentices:', error);
+                    showError('Error al cargar los aprendices: ' + error.message, 'Error');
                 });
         }
 
+        // Eliminar aprendiz
         function deleteApprentice(id) {
-            if (confirm('¿Está seguro de eliminar este aprendiz?')) {
-                fetch('includes/delete_apprentice.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: id })
-                })
+            showConfirm(
+                '¿Está seguro de eliminar este aprendiz? Esta acción no se puede deshacer.',
+                'Confirmar Eliminación de Aprendiz',
+                () => {
+                    fetch('includes/delete_apprentice.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: id })
+                    })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
+                            showSuccess('Aprendiz eliminado correctamente', 'Éxito');
                             const fichaSelect = document.getElementById('fichaSelect');
-                            loadApprenticesByFicha(fichaSelect.value);
-                            // Ya no necesitamos recargar la lista de aprendices registrados
+                            if (fichaSelect.value) {
+                                loadApprenticesByFicha(fichaSelect.value);
+                            }
                         } else {
                             throw new Error(data.message || 'Error al eliminar el aprendiz');
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Error al eliminar el aprendiz: ' + error.message);
+                        showError('Error al eliminar el aprendiz: ' + error.message, 'Error');
                     });
-            }
+                }
+            );
         }
 
-        // Initialize everything when the page loads
-        document.addEventListener('DOMContentLoaded', function () {
-            loadFichas();
+        // Cargar archivo CSV
+        document.getElementById('excelUploadForm').addEventListener('submit', function (e) {
+            e.preventDefault();
 
-            // Add ficha selection event listener
-            document.getElementById('fichaSelect').addEventListener('change', function () {
-                if (this.value) {
-                    loadApprenticesByFicha(this.value);
-                } else {
-                    document.querySelector('#apprenticesTable tbody').innerHTML = '';
-                }
-            });
+            const fileInput = document.getElementById('excelFile');
+            const uploadButtonText = document.getElementById('uploadButtonText');
+            const uploadSpinner = document.getElementById('uploadLoadingSpinner');
 
-            // Agregar el código para manejar la carga de archivos Excel
-            document.getElementById('excelUploadForm').addEventListener('submit', function (e) {
-                e.preventDefault();
+            // Verificar si se seleccionó un archivo
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError('Por favor seleccione un archivo', 'Error de Validación');
+                return;
+            }
 
-                const fileInput = document.getElementById('excelFile');
-                const uploadButtonText = document.getElementById('uploadButtonText');
-                const uploadSpinner = document.getElementById('uploadLoadingSpinner');
+            // Verificar la extensión del archivo
+            const fileName = fileInput.files[0].name;
+            const fileExt = fileName.split('.').pop().toLowerCase();
+            if (fileExt !== 'csv') {
+                showError('Por favor seleccione un archivo CSV válido (.csv)', 'Error de Validación');
+                return;
+            }
 
-                // Verificar si se seleccionó un archivo
-                if (!fileInput.files || fileInput.files.length === 0) {
-                    alert('Por favor seleccione un archivo');
-                    return;
-                }
+            // Mostrar estado de carga
+            uploadButtonText.textContent = 'CARGANDO...';
+            uploadSpinner.style.display = 'block';
 
-                // Verificar la extensión del archivo
-                const fileName = fileInput.files[0].name;
-                const fileExt = fileName.split('.').pop().toLowerCase();
-                if (fileExt !== 'csv') {
-                    alert('Por favor seleccione un archivo CSV válido (.csv)');
-                    return;
-                }
+            // Crear FormData y enviar
+            const formData = new FormData();
+            formData.append('excelFile', fileInput.files[0]);
 
-                // Mostrar estado de carga
-                uploadButtonText.textContent = 'CARGANDO...';
-                uploadSpinner.style.display = 'block';
-
-                // Crear FormData y enviar
-                const formData = new FormData();
-                formData.append('excelFile', fileInput.files[0]);
-
-                fetch('includes/upload_excel_apprentices.php', {
-                    method: 'POST',
-                    body: formData
+            fetch('includes/upload_excel_apprentices.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess(`Aprendices cargados exitosamente. Se importaron ${data.count} registros.`, 'Éxito');
+                        // Actualizar la lista de fichas
+                        loadFichas();
+                        // Limpiar el formulario
+                        document.getElementById('excelUploadForm').reset();
+                    } else {
+                        throw new Error(data.message || 'Error al cargar el archivo');
+                    }
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(`Aprendices cargados exitosamente. Se importaron ${data.count} registros.`);
-                            // Actualizar la lista de fichas
-                            loadFichas();
-                            // Limpiar el formulario
-                            document.getElementById('excelUploadForm').reset();
-                        } else {
-                            throw new Error(data.message || 'Error al cargar el archivo');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error: ' + error.message);
-                    })
-                    .finally(() => {
-                        uploadButtonText.textContent = 'Cargar CSV';
-                        uploadSpinner.style.display = 'none';
-                    });
-            });
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Error al cargar el archivo: ' + error.message, 'Error');
+                })
+                .finally(() => {
+                    uploadButtonText.textContent = 'Cargar CSV';
+                    uploadSpinner.style.display = 'none';
+                });
         });
 
+        // Mostrar reportes
         function showReports(apprenticeId) {
             fetch(`includes/get_apprentice_reports.php?id=${apprenticeId}`)
                 .then(response => response.json())
@@ -583,7 +727,7 @@ if (!isset($_SESSION['user_id'])) {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al cargar los reportes');
+                    showError('Error al cargar los reportes: ' + error.message, 'Error');
                 });
         }
 
@@ -591,22 +735,26 @@ if (!isset($_SESSION['user_id'])) {
             document.getElementById('reportModal').style.display = 'none';
         }
 
+        // Eliminar reporte
         function deleteReport(reportId, apprenticeId) {
-            if (confirm('¿Estás seguro de que deseas eliminar este reporte?')) {
-                fetch('includes/delete_report.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ id: reportId })
-                })
+            showConfirm(
+                '¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer.',
+                'Confirmar Eliminación de Reporte',
+                () => {
+                    fetch('includes/delete_report.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ id: reportId })
+                    })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
+                            showSuccess('Reporte eliminado correctamente', 'Éxito');
                             // Recargar los reportes
                             showReports(apprenticeId);
-
                             // Actualizar la tabla si hay una ficha seleccionada
                             const fichaSelect = document.getElementById('fichaSelect');
                             if (fichaSelect.value) {
@@ -618,10 +766,25 @@ if (!isset($_SESSION['user_id'])) {
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Error al eliminar el reporte: ' + error.message);
+                        showError('Error al eliminar el reporte: ' + error.message, 'Error');
                     });
-            }
+                }
+            );
         }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            loadFichas();
+
+            // Add ficha selection event listener
+            document.getElementById('fichaSelect').addEventListener('change', function () {
+                if (this.value) {
+                    loadApprenticesByFicha(this.value);
+                } else {
+                    document.querySelector('#apprenticesTable tbody').innerHTML = '';
+                }
+            });
+        });
     </script>
 </body>
 
