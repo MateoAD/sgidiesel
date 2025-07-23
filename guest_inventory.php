@@ -66,7 +66,6 @@ require_once 'includes/database.php';
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        /* Efecto para el icono */
         .polymorphic-card .rounded-full {
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -87,13 +86,11 @@ require_once 'includes/database.php';
         /* Row background colors */
         .row-no-consumible {
             background-color: rgba(191, 219, 254, 0.99);
-            /* bg-blue-200 */
             transition: all 0.3s ease;
         }
 
         .row-no-consumible:hover {
             background-color: rgba(147, 197, 253, 0.99);
-            /* hover:bg-blue-300 */
             transform: translateY(-2px);
             box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15);
         }
@@ -139,7 +136,6 @@ require_once 'includes/database.php';
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        /* Actualizar el estilo del modal */
         #reservaModal {
             z-index: 50;
         }
@@ -159,24 +155,6 @@ require_once 'includes/database.php';
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        /* Card styles */
-        .polymorphic-card {
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border: 2px solid transparent;
-            backdrop-filter: blur(8px);
-        }
-
-        .polymorphic-card.selected {
-            border-color: currentColor;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-            background-color: rgba(239, 246, 255, 0.7) !important;
-        }
-
-        .polymorphic-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
         /* Header styles */
         .sticky-header {
             position: sticky;
@@ -187,6 +165,23 @@ require_once 'includes/database.php';
 </head>
 
 <body class="bg-gray-50">
+    <!-- Modal System -->
+    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div id="modalHeader" class="flex justify-between items-center border-b px-5 py-4">
+                <div class="flex items-center">
+                    <i id="modalIcon" class="text-2xl mr-3"></i>
+                    <h3 id="modalTitle" class="text-lg font-semibold"></h3>
+                </div>
+                <button onclick="hideModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-5 text-gray-700"></div>
+            <div id="modalActions" class="flex justify-end px-5 py-4 border-t"></div>
+        </div>
+    </div>
+
     <header class="bg-[#4A655D] text-white shadow-lg" style="background-color: #4A655D !important;">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center">
@@ -243,20 +238,19 @@ require_once 'includes/database.php';
                 </div>
             </div>
 
-           <div class="table-wrapper overflow-x-auto overflow-y-auto max-h-[calc(100vh-200px)]">
-    <table class="min-w-full overflow-hidden">
-        <thead class="bg-gray-800 text-white sticky top-0 z-10">
+            <div class="table-wrapper overflow-x-auto overflow-y-auto max-h-[calc(100vh-200px)]">
+                <table class="min-w-full overflow-hidden">
+                    <thead class="bg-gray-800 text-white sticky top-0 z-10">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Foto</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Nombre</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cantidad</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Estado</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Descripción
-                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Descripción</th>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
-                     <tbody id="toolsTableBody" class="divide-y divide-gray-200">
+                    <tbody id="toolsTableBody" class="divide-y divide-gray-200">
                         <?php
                         try {
                             // Consulta para herramientas consumibles
@@ -398,12 +392,125 @@ FROM herramientas_no_consumibles");
                 </div>
             </form>
         </div>
-        
     </div>
 
-    
-
     <script>
+        // Sistema de Modales
+        function showModal(type, title, message, options = {}) {
+            const modal = document.getElementById('modalSystem');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalHeader = document.getElementById('modalHeader');
+            const modalActions = document.getElementById('modalActions');
+
+            if (modal.timeoutId) {
+                clearTimeout(modal.timeoutId);
+                delete modal.timeoutId;
+            }
+
+            switch(type) {
+                case 'error':
+                    modalIcon.className = 'fas fa-exclamation-triangle text-red-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-red-100 px-5 py-4 bg-red-50';
+                    break;
+                case 'warning':
+                    modalIcon.className = 'fas fa-exclamation-triangle text-orange-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-orange-100 px-5 py-4 bg-orange-50';
+                    break;
+                case 'success':
+                    modalIcon.className = 'fas fa-check-circle text-green-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-green-100 px-5 py-4 bg-green-50';
+                    break;
+                case 'confirm':
+                    modalIcon.className = 'fas fa-question-circle text-blue-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+                    break;
+                default: // info
+                    modalIcon.className = 'fas fa-info-circle text-blue-500';
+                    modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+            }
+
+            modalTitle.textContent = title;
+            modalContent.innerHTML = message;
+
+            modalActions.innerHTML = '';
+            if (options.actions) {
+                options.actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.textContent = action.text;
+                    button.className = action.class || 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150';
+                    button.onclick = () => {
+                        if (action.handler) action.handler();
+                        if (action.close !== false) hideModal();
+                    };
+                    modalActions.appendChild(button);
+                });
+            } else {
+                modalActions.innerHTML = `
+                    <button onclick="hideModal()" 
+                            class="text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150">
+                        Cerrar
+                    </button>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const duration = options.duration || 6000;
+            if (duration > 0 && !options.persistent) {
+                modal.timeoutId = setTimeout(() => {
+                    hideModal();
+                }, Math.max(duration, 1000));
+            }
+        }
+
+        function hideModal() {
+            const modal = document.getElementById('modalSystem');
+            if (modal.timeoutId) {
+                clearTimeout(modal.timeoutId);
+                delete modal.timeoutId;
+            }
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function showError(message, title = 'Error', duration = 10000) {
+            showModal('error', title, message, { duration: Math.max(duration, 10000) });
+        }
+
+        function showWarning(message, title = 'Advertencia', duration = 8000) {
+            showModal('warning', title, message, { duration: Math.max(duration, 8000) });
+        }
+
+        function showInfo(message, title = 'Información', duration = 7000) {
+            showModal('info', title, message, { duration: Math.max(duration, 7000) });
+        }
+
+        function showSuccess(message, title = 'Éxito', duration = 1000) {
+            showModal('success', title, message, { duration: Math.max(duration, 1000) });
+        }
+
+        function showConfirm(message, title = 'Confirmar Acción', onConfirm) {
+            showModal('confirm', title, message, {
+                persistent: true,
+                actions: [
+                    {
+                        text: 'Aceptar',
+                        class: 'text-sm py-2 px-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150',
+                        handler: onConfirm,
+                        close: true
+                    },
+                    {
+                        text: 'Cancelar',
+                        class: 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150',
+                        close: true
+                    }
+                ]
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('searchInput');
             const rows = document.querySelectorAll('.tool-row');
@@ -461,11 +568,15 @@ FROM herramientas_no_consumibles");
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Reserva solicitada correctamente');
+                        showSuccess('Reserva solicitada correctamente', 'Éxito');
                         cerrarModal();
                     } else {
-                        alert('Error al guardar la reserva: ' + data.message);
+                        showError('Error al guardar la reserva: ' + data.message, 'Error');
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Error al procesar la reserva: ' + error.message, 'Error');
                 });
         });
     </script>
