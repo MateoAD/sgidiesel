@@ -56,12 +56,6 @@ switch ($periodo) {
 }
 
 try {
-    // Conexión a la base de datos
-    $db = new PDO('mysql:host=localhost;dbname=diesel', 'root', '', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8'
-    ]);
 
     // Consultas SQL
     $queryHerramientasNoConsumibles = "
@@ -223,38 +217,48 @@ try {
     }
 
     // Gráfico para herramientas no consumibles
-    if (!empty($datosNoConsumibles)) {
-        $pdf->Ln(5);
-        $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->Cell(0, 10, 'Herramientas No Consumibles Más Prestadas', 0, 1, 'L');
+    // Gráfico para herramientas no consumibles
+if (!empty($datosNoConsumibles)) {
+    $pdf->Ln(10); // Añadir espacio antes del gráfico
+    $pdf->SetFont('helvetica', 'B', 12);
+    $pdf->Cell(0, 10, 'Herramientas No Consumibles Más Prestadas', 0, 1, 'L');
 
-        $width = 180;
-        $height = 80;
-        $x = 15;
-        $y = $pdf->GetY();
+    $width = 180;
+    $height = 80;
+    $x = 15;
+    $y = $pdf->GetY();
 
-        $pdf->Line($x, $y, $x, $y + $height);
-        $pdf->Line($x, $y + $height, $x + $width, $y + $height);
+    // Aumentar espacio para etiquetas
+    $labelHeight = 15;
+    $graphHeight = $height + $labelHeight;
 
-        $maxValue = max($datosNoConsumibles) ?: 1;
-        $barWidth = $width / count($datosNoConsumibles);
+    $pdf->Line($x, $y, $x, $y + $height);
+    $pdf->Line($x, $y + $height, $x + $width, $y + $height);
 
-        for ($i = 0; $i < count($datosNoConsumibles); $i++) {
-            $barHeight = ($datosNoConsumibles[$i] / $maxValue) * $height;
-            $barX = $x + ($i * $barWidth);
-            $barY = $y + $height - $barHeight;
+    $maxValue = max($datosNoConsumibles) ?: 1;
+    $barWidth = $width / count($datosNoConsumibles);
 
-            $pdf->SetFillColor(41, 128, 185);
-            $pdf->Rect($barX, $barY, $barWidth - 2, $barHeight, 'F');
+    for ($i = 0; $i < count($datosNoConsumibles); $i++) {
+        $barHeight = ($datosNoConsumibles[$i] / $maxValue) * $height;
+        $barX = $x + ($i * $barWidth);
+        $barY = $y + $height - $barHeight;
 
-            $pdf->SetFont('helvetica', '', 8);
-            $pdf->SetXY($barX, $barY - 10);
-            $pdf->Cell($barWidth - 2, 10, $datosNoConsumibles[$i], 0, 0, 'C');
+        $pdf->SetFillColor(41, 128, 185);
+        $pdf->Rect($barX, $barY, $barWidth - 2, $barHeight, 'F');
 
-            $pdf->SetXY($barX, $y + $height + 2);
-            $pdf->Cell($barWidth - 2, 10, substr($labelsNoConsumibles[$i], 0, 10), 0, 0, 'C');
-        }
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->SetXY($barX, $barY - 10);
+        $pdf->Cell($barWidth - 2, 10, $datosNoConsumibles[$i], 0, 0, 'C');
+
+        // Mostrar etiquetas completas rotadas
+        $pdf->StartTransform();
+        $pdf->Rotate(45, $barX + ($barWidth/2), $y + $height + 5);
+        $pdf->SetXY($barX, $y + $height + 5);
+        $pdf->Cell($barWidth - 2, 5, $labelsNoConsumibles[$i], 0, 0, 'L');
+        $pdf->StopTransform();
     }
+    $pdf->Ln($graphHeight + 20); // Añadir espacio después del gráfico
+}
 
     // Gráfico para herramientas consumibles
     if (!empty($datosConsumibles)) {
