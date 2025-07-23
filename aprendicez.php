@@ -74,13 +74,17 @@ if (!isset($_SESSION['user_id'])) {
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
+
+        #modalSystem {
+            z-index: 60; /* Incrementado para asegurar que esté por encima de reportModal */
+        }
     </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
 
     <!-- Modal System -->
-    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-60">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div id="modalHeader" class="flex justify-between items-center border-b px-5 py-4">
                 <div class="flex items-center">
@@ -737,6 +741,8 @@ if (!isset($_SESSION['user_id'])) {
 
         // Eliminar reporte
         function deleteReport(reportId, apprenticeId) {
+            // Cerrar el modal de reportes antes de mostrar la confirmación
+            closeReportModal();
             showConfirm(
                 '¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer.',
                 'Confirmar Eliminación de Reporte',
@@ -786,6 +792,12 @@ if (!isset($_SESSION['user_id'])) {
             });
         });
     </script>
+
+    <footer class="bg-[#2D3A36] text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 
 </html>
