@@ -285,7 +285,6 @@ try {
         }
     }
 
-
     // Mostrar mensajes de éxito desde la URL
     if (isset($_GET['success'])) {
         if ($_GET['success'] === 'devolucion') {
@@ -394,7 +393,6 @@ try {
         'prestamos' => array_column($aprendicesTop, 'total_prestamos')
     ];
 
-
 } catch (PDOException $e) {
     $prestamosActivos = [];
     $historialPrestamos = [];
@@ -442,7 +440,6 @@ $queryReservas = "SELECT
 $stmtReservas = $db->prepare($queryReservas);
 $stmtReservas->execute();
 $reservasPendientes = $stmtReservas->fetchAll(PDO::FETCH_ASSOC);
-
 
 if (isset($_POST['rechazar_reserva'])) {
     $idReserva = filter_input(INPUT_POST, 'reserva_id', FILTER_VALIDATE_INT);
@@ -564,6 +561,22 @@ if (isset($_POST['rechazar_reserva'])) {
 
 <body class="bg-gray-50">
 
+    <!-- Modal System -->
+    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div id="modalHeader" class="flex justify-between items-center border-b px-5 py-4">
+                <div class="flex items-center">
+                    <i id="modalIcon" class="text-2xl mr-3"></i>
+                    <h3 id="modalTitle" class="text-lg font-semibold"></h3>
+                </div>
+                <button onclick="hideModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-5 text-gray-700"></div>
+            <div id="modalActions" class="flex justify-end px-5 py-4 border-t"></div>
+        </div>
+    </div>
 
     <header class="bg-[#4A655D] text-white shadow-lg" style="background-color: #4A655D !important;">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -632,21 +645,7 @@ if (isset($_POST['rechazar_reserva'])) {
         </div>
     </header>
 
-
     <main class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Mensajes de éxito/error -->
-        <?php if (!empty($mensajeExito)): ?>
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
-                <p class="font-bold">Éxito</p>
-                <p><?= htmlspecialchars($mensajeExito) ?></p>
-            </div>
-        <?php elseif (!empty($mensajeError)): ?>
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-                <p class="font-bold">Error</p>
-                <p><?= htmlspecialchars($mensajeError) ?></p>
-            </div>
-        <?php endif; ?>
-
         <!-- Sección de Préstamos Activos (No Consumibles) -->
         <div
             class="polymorphic-container bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-2xl shadow-lg mb-8 transition-all duration-500 hover:shadow-xl">
@@ -662,7 +661,7 @@ if (isset($_POST['rechazar_reserva'])) {
 
             <!-- Tabla de préstamos activos -->
             <div class="table-container mb-4">
-                <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <table id="tabla-activos" class="min-w-full bg-white rounded-lg overflow-hidden">
                     <thead class="bg-gray-800 text-white sticky-header">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Aprendiz</th>
@@ -719,7 +718,7 @@ if (isset($_POST['rechazar_reserva'])) {
                                             <input type="hidden" name="id_prestamo" value="<?= $prestamo['id_prestamo'] ?>">
                                             <button type="submit" name="devolver"
                                                 class="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm"
-                                                onclick="return confirm('¿Confirmar devolución de la herramienta?')">
+                                                onclick="return confirmarDevolucion(<?= $prestamo['id_prestamo'] ?>)">
                                                 <i class="fas fa-undo-alt mr-1"></i> Devolver
                                             </button>
                                         </form>
@@ -764,21 +763,19 @@ if (isset($_POST['rechazar_reserva'])) {
 
             <!-- Botón de reporte -->
             <div class="w-full">
-                <button onclick="document.getElementById('modal-reporte').classList.remove('hidden')"
+                <button onclick="mostrarModalReporte()"
                     class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium">
                     <i class="fas fa-exclamation-triangle mr-2"></i> GENERAR REPORTE DE DEVOLUCIONES PENDIENTES
                 </button>
             </div>
         </div>
 
-
-        <!-- ... seccion reservas ... -->
+        <!-- Sección de Reservas Pendientes -->
         <div class="bg-blue-50 rounded-lg shadow-lg p-6 mb-8">
             <h2 class="text-2xl font-bold mb-4"><i class="fas fa-clock mr-2"></i>Reservas Pendientes</h2>
             <div class="table-container">
                 <?php if (empty($reservasPendientes)): ?>
                     <div class="text-center py-8">
-
                         <h3 class="mt-2 text-lg font-medium text-gray-900">No hay reservas pendientes</h3>
                         <p class="mt-1 text-gray-500">Actualmente no hay solicitudes de reserva por aprobar.</p>
                     </div>
@@ -795,7 +792,7 @@ if (isset($_POST['rechazar_reserva'])) {
                         </thead>
                         <tbody id="toolsTableBody" class="divide-y divide-gray-200">
                             <?php foreach ($reservasPendientes as $reserva): ?>
-                                <tr class="border-b hover:bg-blue-50"> <!-- Fila con hover azul claro -->
+                                <tr class="border-b hover:bg-blue-50">
                                     <td class="px-6 py-4">
                                         <?= htmlspecialchars($reserva['nombre_aprendiz']) ?>
                                         <div class="text-sm text-gray-500">Ficha: <?= htmlspecialchars($reserva['ficha']) ?>
@@ -805,7 +802,7 @@ if (isset($_POST['rechazar_reserva'])) {
                                     <td class="px-6 py-4"><?= htmlspecialchars($reserva['cantidad']) ?></td>
                                     <td class="px-6 py-4"><?= htmlspecialchars($reserva['fecha_reserva']) ?></td>
                                     <td class="px-6 py-4">
-                                        <form method="post" class="inline" onsubmit="return procesarReserva(event, this);">
+                                        <form method="post" class="inline" onsubmit="return procesarReserva(event, this, <?= $reserva['id'] ?>, '<?= $reserva['tipo_herramienta'] ?>');">
                                             <input type="hidden" name="reserva_id" value="<?= $reserva['id'] ?>">
                                             <input type="hidden" name="herramienta_id"
                                                 value="<?= $reserva['herramienta_id'] ?>">
@@ -814,11 +811,11 @@ if (isset($_POST['rechazar_reserva'])) {
                                             <div class="flex items-center space-x-2">
                                                 <button type="submit" name="aceptar_reserva"
                                                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center">
-                                                    <i class="fas fa-check-circle mr-2"></i> Aceptar
+                                                    <i class="fas f a-check-circle mr-2"></i> Aceptar
                                                 </button>
                                                 <button type="submit" name="rechazar_reserva"
                                                     class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center"
-                                                    onclick="return confirm('¿Está seguro de rechazar esta reserva? Esta acción no se puede deshacer.')">
+                                                    onclick="return confirmarRechazoReserva(<?= $reserva['id'] ?>)">
                                                     <i class="fas fa-times-circle mr-2"></i> Rechazar
                                                 </button>
                                             </div>
@@ -865,8 +862,6 @@ if (isset($_POST['rechazar_reserva'])) {
                 </div>
             </div>
 
-
-
             <!-- Tabla de historial -->
             <div class="table-container">
                 <table id="tabla-historial" class="min-w-full bg-white rounded-lg overflow-hidden">
@@ -888,7 +883,6 @@ if (isset($_POST['rechazar_reserva'])) {
                         <?php if (!empty($historialPrestamos)): ?>
                             <?php foreach ($historialPrestamos as $prestamo): ?>
                                 <?php
-                                // Definir la clase de color para la fila según el tipo de herramienta con colores más intensos
                                 $rowColorClass = $prestamo['herramienta_tipo'] === 'consumible' ? 'bg-purple-200' : 'bg-blue-200';
                                 $hoverClass = $prestamo['herramienta_tipo'] === 'consumible' ? 'hover:bg-purple-300' : 'hover:bg-blue-300';
                                 ?>
@@ -1146,8 +1140,7 @@ if (isset($_POST['rechazar_reserva'])) {
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-gray-800">Reporte de Devoluciones Pendientes</h3>
-                        <button onclick="document.getElementById('modal-reporte').classList.add('hidden')"
-                            class="text-gray-500 hover:text-gray-700">
+                        <button onclick="hideModalReporte()" class="text-gray-500 hover:text-gray-700">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -1176,15 +1169,15 @@ if (isset($_POST['rechazar_reserva'])) {
                             </table>
                         </div>
 
-                        <form method="POST">
+                        <form id="form-reporte" method="POST">
                             <input type="hidden" name="generar_reporte" value="1">
                             <div class="flex justify-end space-x-4">
-                                <button type="button"
-                                    onclick="document.getElementById('modal-reporte').classList.add('hidden')"
+                                <button type="button" onclick="hideModalReporte()"
                                     class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
                                     Cancelar
                                 </button>
-                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                                <button type="button" onclick="confirmarGenerarReporte()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                                     <i class="fas fa-save mr-2"></i> Guardar Reporte en BD
                                 </button>
                             </div>
@@ -1194,7 +1187,7 @@ if (isset($_POST['rechazar_reserva'])) {
                             No hay aprendices con herramientas pendientes de devolución
                         </div>
                         <div class="flex justify-end">
-                            <button onclick="document.getElementById('modal-reporte').classList.add('hidden')"
+                            <button onclick="hideModalReporte()"
                                 class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
                                 Cerrar
                             </button>
@@ -1217,44 +1210,215 @@ if (isset($_POST['rechazar_reserva'])) {
             </div>
         </div>
 
-        <!-- Modal de confirmación de reporte generado -->
-        <div id="modal-confirmacion"
-            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div class="p-6 text-center">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                        <i class="fas fa-check text-green-600 text-xl"></i>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Reporte Generado</h3>
-                    <div class="mt-2">
-                        <p class="text-sm text-gray-500" id="modal-confirmacion-mensaje">
-                            El reporte se ha guardado correctamente en la base de datos.
-                        </p>
-                    </div>
-                    <div class="mt-4">
-                        <button type="button" onclick="cerrarModalConfirmacion()"
-                            class="w-full flex justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <i class="fas fa-arrow-left mr-2"></i> Volver a la página principal
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <script>
-            async function procesarReserva(event, form) {
+            // Utilitarios
+            const $ = id => document.getElementById(id);
+            const $$ = selector => document.querySelectorAll(selector);
+
+            // Sistema de Modales mejorado
+            function showModal(type, title, message, options = {}) {
+                const modal = $('modalSystem');
+                const modalIcon = $('modalIcon');
+                const modalTitle = $('modalTitle');
+                const modalContent = $('modalContent');
+                const modalHeader = $('modalHeader');
+                const modalActions = $('modalActions');
+
+                console.log(`Mostrando modal: ${type}, título: ${title}, duración: ${options.duration || 6000}ms`);
+
+                if (modal.timeoutId) {
+                    console.log('Limpiando temporizador previo:', modal.timeoutId);
+                    clearTimeout(modal.timeoutId);
+                    delete modal.timeoutId;
+                }
+
+                switch(type) {
+                    case 'error':
+                        modalIcon.className = 'fas fa-exclamation-triangle text-red-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-red-100 px-5 py-4 bg-red-50';
+                        break;
+                    case 'warning':
+                        modalIcon.className = 'fas fa-exclamation-triangle text-orange-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-orange-100 px-5 py-4 bg-orange-50';
+                        break;
+                    case 'success':
+                        modalIcon.className = 'fas fa-check-circle text-green-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-green-100 px-5 py-4 bg-green-50';
+                        break;
+                    case 'confirm':
+                        modalIcon.className = 'fas fa-question-circle text-blue-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+                        break;
+                    default: // info
+                        modalIcon.className = 'fas fa-info-circle text-blue-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+                }
+
+                modalTitle.textContent = title;
+                modalContent.innerHTML = message;
+
+                modalActions.innerHTML = '';
+                if (options.actions) {
+                    options.actions.forEach(action => {
+                        const button = document.createElement('button');
+                        button.textContent = action.text;
+                        button.className = action.class || 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150';
+                        button.onclick = () => {
+                            if (action.handler) action.handler();
+                            if (action.close !== false) hideModal();
+                        };
+                        modalActions.appendChild(button);
+                    });
+                } else {
+                    modalActions.innerHTML = `
+                        <button onclick="hideModal()" 
+                                class="text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150">
+                            Cerrar
+                        </button>
+                    `;
+                }
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                const duration = options.duration || 6000;
+                if (duration > 0 && !options.persistent) {
+                    console.log(`Configurando temporizador para cerrar en ${duration}ms`);
+                    modal.timeoutId = setTimeout(() => {
+                        console.log('Cerrando modal automáticamente');
+                        hideModal();
+                    }, Math.max(duration, 1000));
+                }
+            }
+
+            function hideModal() {
+                const modal = $('modalSystem');
+                if (modal.timeoutId) {
+                    console.log('Limpiando temporizador:', modal.timeoutId);
+                    clearTimeout(modal.timeoutId);
+                    delete modal.timeoutId;
+                }
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                console.log('Modal cerrado');
+            }
+
+            // Funciones de conveniencia con tiempos mínimos garantizados
+            function showError(message, title = 'Error', duration = 10000) {
+                showModal('error', title, message, { duration: Math.max(duration, 10000) });
+            }
+
+            function showWarning(message, title = 'Advertencia', duration = 8000) {
+                showModal('warning', title, message, { duration: Math.max(duration, 8000) });
+            }
+
+            function showInfo(message, title = 'Información', duration = 7000) {
+                showModal('info', title, message, { duration: Math.max(duration, 7000) });
+            }
+
+            function showSuccess(message, title = 'Éxito', duration = 1000) {
+                showModal('success', title, message, { duration: Math.max(duration, 1000) });
+            }
+
+            // Función para modales persistentes
+            function showPersistentModal(type, title, message) {
+                showModal(type, title, message, { persistent: true });
+            }
+
+            // Función para confirmaciones personalizadas
+            function showConfirm(message, title = 'Confirmar Acción', onConfirm) {
+                showModal('confirm', title, message, {
+                    persistent: true,
+                    actions: [
+                        {
+                            text: 'Aceptar',
+                            class: 'text-sm py-2 px-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150',
+                            handler: onConfirm,
+                            close: true
+                        },
+                        {
+                            text: 'Cancelar',
+                            class: 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150',
+                            close: true
+                        }
+                    ]
+                });
+            }
+
+            // Funciones específicas para el modal de reporte
+            function mostrarModalReporte() {
+                <?php if (empty($aprendicesPendientes)): ?>
+                    showInfo('No hay aprendices con herramientas pendientes de devolución', 'Sin Pendientes', 7000);
+                <?php else: ?>
+                    $('modal-reporte').classList.remove('hidden');
+                <?php endif; ?>
+            }
+
+            function hideModalReporte() {
+                $('modal-reporte').classList.add('hidden');
+            }
+
+            function confirmarGenerarReporte() {
+                showConfirm(
+                    '¿Está seguro de que desea generar el reporte de devoluciones pendientes?',
+                    'Confirmar Reporte',
+                    () => {
+                        $('form-reporte').submit();
+                    }
+                );
+            }
+
+            // Funciones para confirmaciones de devolución y rechazo de reserva
+            function confirmarDevolucion(idPrestamo) {
+                showConfirm(
+                    '¿Confirmar devolución de la herramienta?',
+                    'Confirmar Devolución',
+                    () => {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.innerHTML = `
+                            <input type="hidden" name="id_prestamo" value="${idPrestamo}">
+                            <input type="hidden" name="devolver" value="1">
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                );
+                return false;
+            }
+
+            function confirmarRechazoReserva(idReserva) {
+                showConfirm(
+                    '¿Está seguro de rechazar esta reserva? Esta acción no se puede deshacer.',
+                    'Confirmar Rechazo de Reserva',
+                    () => {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.innerHTML = `
+                            <input type="hidden" name="reserva_id" value="${idReserva}">
+                            <input type="hidden" name="rechazar_reserva" value="1">
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                );
+                return false;
+            }
+
+            // Procesar reservas con modales
+            async function procesarReserva(event, form, reservaId, tipoHerramienta) {
                 event.preventDefault();
 
                 const action = event.submitter.name === 'aceptar_reserva' ? 'aceptar' : 'rechazar';
 
-                if (action === 'rechazar' && !confirm('¿Está seguro de rechazar esta reserva? Esta acción no se puede deshacer.')) {
-                    return false;
+                if (action === 'rechazar') {
+                    return confirmarRechazoReserva(reservaId);
                 }
 
                 try {
                     const formData = new FormData();
                     formData.append('action', action);
-                    formData.append('reserva_id', form.querySelector('input[name="reserva_id"]').value);
+                    formData.append('reserva_id', reservaId);
 
                     const response = await fetch('includes/procesar_reserva.php', {
                         method: 'POST',
@@ -1264,39 +1428,22 @@ if (isset($_POST['rechazar_reserva'])) {
                     const data = await response.json();
 
                     if (data.error) {
-                        alert(data.message);
+                        showError(data.message, 'Error', 10000);
                         return false;
                     }
 
-                    // Mostrar mensaje de éxito
-                    alert(data.message);
-
-                    // Recargar la página para actualizar la lista de reservas
-                    window.location.reload();
+                    showSuccess(data.message, 'Éxito', 1000);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
 
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Error al procesar la reserva');
+                    showError('Error al procesar la reserva: ' + error.message, 'Error', 10000);
                 }
 
                 return false;
             }
-
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    // Desactivar todas las pestañas
-                    document.querySelectorAll('.tab-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-
-                    // Activar la pestaña seleccionada
-                    button.classList.add('active');
-                    document.getElementById(button.dataset.tab).classList.add('active');
-                });
-            });
 
             // Configuración de colores
             const colors = {
@@ -1433,42 +1580,8 @@ if (isset($_POST['rechazar_reserva'])) {
                     row.style.display = text.includes(searchTerm) ? '' : 'none';
                 });
             });
-            // Función para buscar en préstamos activos
-            document.getElementById('buscar-activos').addEventListener('input', function () {
-                const term = this.value.toLowerCase();
-                const contenedor = this.closest('.polymorphic-container');
-                const filas = contenedor.querySelectorAll('tbody tr');
 
-                filas.forEach(row => {
-                    row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
-                });
-            });
-
-            // Función para buscar en historial
-            document.getElementById('buscar-historial').addEventListener('input', function () {
-                const term = this.value.toLowerCase();
-                const contenedor = this.closest('.polymorphic-container');
-                const filas = contenedor.querySelectorAll('tbody tr');
-
-                filas.forEach(row => {
-                    row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
-                });
-            });
-
-            // Cerrar modal al hacer clic fuera del contenido
-            document.getElementById('modal-reporte').addEventListener('click', function (e) {
-                if (e.target === this) {
-                    this.classList.add('hidden');
-                }
-            });
-
-            // Función para cerrar el modal de confirmación
-            function cerrarModalConfirmacion() {
-                document.getElementById('modal-confirmacion').classList.add('hidden');
-                document.getElementById('modal-reporte').classList.add('hidden');
-            }
-
-            // Función para aplicar todos los filtros al historial
+                        // Función para aplicar todos los filtros al historial
             function aplicarFiltrosHistorial() {
                 const searchTerm = document.getElementById('buscar-historial').value.toLowerCase();
                 const tipoFiltro = document.getElementById('filtro-tipo').value;
@@ -1477,40 +1590,79 @@ if (isset($_POST['rechazar_reserva'])) {
                 const rows = document.querySelectorAll('#tabla-historial tbody tr');
 
                 rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    const esTipoConsumible = row.classList.contains('bg-purple-200');
-                    const tipo = esTipoConsumible ? 'consumible' : 'no_consumible';
+                    const aprendiz = row.cells[0].textContent.toLowerCase();
+                    const herramienta = row.cells[1].textContent.toLowerCase();
+                    const tipo = row.cells[2].textContent.toLowerCase();
+                    const estado = row.cells[4].querySelector('span').dataset.estado.toLowerCase();
 
-                    // Mejor detección del estado usando data-attribute
-                    const estadoElement = row.querySelector('td:nth-child(5) span');
-                    let estado = estadoElement ? estadoElement.getAttribute('data-estado') || estadoElement.textContent.trim().toLowerCase() : '';
+                    const coincideBusqueda = aprendiz.includes(searchTerm) || herramienta.includes(searchTerm);
+                    const coincideTipo = tipoFiltro === 'todos' || tipo === tipoFiltro;
+                    const coincideEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
 
-                    // Normalización de estados
-                    if (estado.includes('devuelto')) estado = 'devuelto';
-                    else if (estado.includes('prestado')) estado = 'prestado';
-                    else if (estado.includes('consumid')) estado = 'consumida';
-
-                    const cumpleBusqueda = text.includes(searchTerm);
-                    const cumpleTipo = tipoFiltro === 'todos' || tipo === tipoFiltro;
-                    const cumpleEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
-
-                    row.style.display = (cumpleBusqueda && cumpleTipo && cumpleEstado) ? '' : 'none';
+                    row.style.display = coincideBusqueda && coincideTipo && coincideEstado ? '' : 'none';
                 });
+
+                // Mostrar mensaje si no hay resultados
+                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none').length;
+                if (visibleRows === 0) {
+                    showInfo('No se encontraron resultados que coincidan con los filtros aplicados.', 'Sin Resultados', 7000);
+                }
             }
-            // Asignar eventos a los filtros
-            document.getElementById('buscar-historial').addEventListener('input', aplicarFiltrosHistorial);
+
+            // Event listeners para los filtros
             document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltrosHistorial);
             document.getElementById('filtro-estado').addEventListener('change', aplicarFiltrosHistorial);
+            document.getElementById('buscar-historial').addEventListener('input', aplicarFiltrosHistorial);
 
-            // Botón para reiniciar filtros
-            document.getElementById('reset-filtros').addEventListener('click', function () {
+            // Reiniciar filtros
+            document.getElementById('reset-filtros').addEventListener('click', () => {
                 document.getElementById('buscar-historial').value = '';
                 document.getElementById('filtro-tipo').value = 'todos';
                 document.getElementById('filtro-estado').value = 'todos';
                 aplicarFiltrosHistorial();
             });
+
+            // Manejo de pestañas para gráficos
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Quitar clase activa de todos los botones y contenidos
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // Activar el botón y contenido seleccionado
+                    button.classList.add('active');
+                    document.getElementById(button.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Mostrar mensajes de sesión
+            <?php if (isset($_SESSION['success'])): ?>
+                showSuccess(<?php echo json_encode($_SESSION['success']); ?>, 'Éxito', 1000);
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                showError(<?php echo json_encode($_SESSION['error']); ?>, 'Error', 10000);
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
+
+            <?php if (!empty($mensajeExito)): ?>
+                showSuccess(<?php echo json_encode($mensajeExito); ?>, 'Éxito', 1000);
+            <?php endif; ?>
+
+            <?php if (!empty($mensajeError)): ?>
+                showError(<?php echo json_encode($mensajeError); ?>, 'Error', 10000);
+            <?php endif; ?>
+
+            // Mostrar mensaje de error de stock si existe
+            <?php if (isset($_SESSION['error_stock'])): ?>
+                showError(<?php echo json_encode($_SESSION['error_stock']); ?>, 'Error de Stock', 10000);
+                <?php unset($_SESSION['error_stock']); ?>
+            <?php endif; ?>
         </script>
     </main>
 </body>
-
 </html>
