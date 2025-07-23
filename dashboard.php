@@ -76,14 +76,6 @@ require_once 'includes/auth_check.php';
 
         body {
             background-image: url('./img/fondo_panel.png');
-            /* Reemplaza con la ruta correcta de tu imagen */
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            position: relative;
-
-            background-image: url('./img/fondo_panel.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -99,7 +91,6 @@ require_once 'includes/auth_check.php';
             width: 100%;
             height: 100%;
             background-color: rgba(255, 255, 255, 0.1);
-            /* Color blanco con 70% de opacidad */
             z-index: -1;
         }
 
@@ -191,6 +182,23 @@ require_once 'includes/auth_check.php';
 
 <body class="bg-gray-50 min-h-screen">
 
+    <!-- Modal System -->
+    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div id="modalHeader" class="flex justify-between items-center border-b px-5 py-4">
+                <div class="flex items-center">
+                    <i id="modalIcon" class="text-2xl mr-3"></i>
+                    <h3 id="modalTitle" class="text-lg font-semibold"></h3>
+                </div>
+                <button onclick="hideModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-5 text-gray-700"></div>
+            <div id="modalActions" class="flex justify-end px-5 py-4 border-t"></div>
+        </div>
+    </div>
+
     <!-- Header reorganizado -->
     <header class="bg-[#4A655D] text-white shadow-lg sticky top-0 z-10" style="background-color: #4A655D !important;">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -262,8 +270,6 @@ require_once 'includes/auth_check.php';
             </div>
         </div>
     </header>
-
-
 
     <!-- Main Content -->
     <div class="container mx-auto p-6">
@@ -550,24 +556,147 @@ require_once 'includes/auth_check.php';
 
         <!-- Scripts -->
         <script>
-            function filterUsers() {
-                const searchInput = document.getElementById('searchUsers');
-                const filter = searchInput.value.toLowerCase();
-                const rows = document.querySelectorAll('#usuarios-content tr');
+            // Utilitarios
+            const $ = id => document.getElementById(id);
+            const $$ = selector => document.querySelectorAll(selector);
 
-                rows.forEach(row => {
-                    const textContent = row.textContent.toLowerCase();
-                    row.style.display = textContent.includes(filter) ? '' : 'none';
+            // Sistema de Modales mejorado
+            function showModal(type, title, message, options = {}) {
+                const modal = $('modalSystem');
+                const modalIcon = $('modalIcon');
+                const modalTitle = $('modalTitle');
+                const modalContent = $('modalContent');
+                const modalHeader = $('modalHeader');
+                const modalActions = $('modalActions');
+
+                console.log(`Mostrando modal: ${type}, título: ${title}, duración: ${options.duration || 6000}ms`);
+
+                if (modal.timeoutId) {
+                    console.log('Limpiando temporizador previo:', modal.timeoutId);
+                    clearTimeout(modal.timeoutId);
+                    delete modal.timeoutId;
+                }
+
+                switch(type) {
+                    case 'error':
+                        modalIcon.className = 'fas fa-exclamation-triangle text-red-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-red-100 px-5 py-4 bg-red-50';
+                        break;
+                    case 'warning':
+                        modalIcon.className = 'fas fa-exclamation-triangle text-orange-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-orange-100 px-5 py-4 bg-orange-50';
+                        break;
+                    case 'success':
+                        modalIcon.className = 'fas fa-check-circle text-green-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-green-100 px-5 py-4 bg-green-50';
+                        break;
+                    case 'confirm':
+                        modalIcon.className = 'fas fa-question-circle text-blue-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+                        break;
+                    default: // info
+                        modalIcon.className = 'fas fa-info-circle text-blue-500';
+                        modalHeader.className = 'flex justify-between items-center border-b border-blue-100 px-5 py-4 bg-blue-50';
+                }
+
+                modalTitle.textContent = title;
+                modalContent.innerHTML = message;
+
+                modalActions.innerHTML = '';
+                if (options.actions) {
+                    options.actions.forEach(action => {
+                        const button = document.createElement('button');
+                        button.textContent = action.text;
+                        button.className = action.class || 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150';
+                        button.onclick = () => {
+                            if (action.handler) action.handler();
+                            if (action.close !== false) hideModal();
+                        };
+                        modalActions.appendChild(button);
+                    });
+                } else {
+                    modalActions.innerHTML = `
+                        <button onclick="hideModal()" 
+                                class="text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150">
+                            Cerrar
+                        </button>
+                    `;
+                }
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                const duration = options.duration || 6000;
+                if (duration > 0 && !options.persistent) {
+                    console.log(`Configurando temporizador para cerrar en ${duration}ms`);
+                    modal.timeoutId = setTimeout(() => {
+                        console.log('Cerrando modal automáticamente');
+                        hideModal();
+                    }, Math.max(duration, 1000));
+                }
+            }
+
+            function hideModal() {
+                const modal = $('modalSystem');
+                if (modal.timeoutId) {
+                    console.log('Limpiando temporizador:', modal.timeoutId);
+                    clearTimeout(modal.timeoutId);
+                    delete modal.timeoutId;
+                }
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                console.log('Modal cerrado');
+            }
+
+            // Funciones de conveniencia con tiempos mínimos garantizados
+            function showError(message, title = 'Error', duration = 10000) {
+                showModal('error', title, message, { duration: Math.max(duration, 10000) });
+            }
+
+            function showWarning(message, title = 'Advertencia', duration = 8000) {
+                showModal('warning', title, message, { duration: Math.max(duration, 8000) });
+            }
+
+            function showInfo(message, title = 'Información', duration = 7000) {
+                showModal('info', title, message, { duration: Math.max(duration, 7000) });
+            }
+
+            function showSuccess(message, title = 'Éxito', duration = 1000) {
+                showModal('success', title, message, { duration: Math.max(duration, 1000) });
+            }
+
+            // Función para modales persistentes
+            function showPersistentModal(type, title, message) {
+                showModal(type, title, message, { persistent: true });
+            }
+
+            // Función para confirmaciones personalizadas
+            function showConfirm(message, title = 'Confirmar Acción', onConfirm) {
+                showModal('confirm', title, message, {
+                    persistent: true,
+                    actions: [
+                        {
+                            text: 'Aceptar',
+                            class: 'text-sm py-2 px-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150',
+                            handler: onConfirm,
+                            close: true
+                        },
+                        {
+                            text: 'Cancelar',
+                            class: 'text-sm py-2 px-3 text-gray-500 hover:text-gray-600 transition duration-150',
+                            close: true
+                        }
+                    ]
                 });
             }
 
+            // Función para cargar usuarios
             async function cargarUsuarios() {
-                const usuariosContent = document.getElementById('usuarios-content');
+                const usuariosContent = $('usuarios-content');
 
                 try {
                     const response = await fetch('includes/get_users_data.php');
 
-                    // Check if response is JSON
                     const contentType = response.headers.get('content-type');
                     if (!contentType || !contentType.includes('application/json')) {
                         const text = await response.text();
@@ -580,7 +709,6 @@ require_once 'includes/auth_check.php';
                         throw new Error(data.message || 'Error al cargar usuarios');
                     }
 
-                    // Update your UI with the users data
                     let html = '';
                     data.users.forEach(user => {
                         const rowColor = user.rol === 'administrador'
@@ -595,51 +723,50 @@ require_once 'includes/auth_check.php';
                                 : 'bg-blue-100 text-blue-800';
 
                         html += `
-                <tr class="${rowColor} transition-colors duration-200">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.usuario}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeColor}">
-                            ${user.rol}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.telefono || 'No registrado'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center gap-4">
-                           ${user.rol === 'administrador' ? `
-    <button onclick="cambiarRol(${user.id}, 'usuario')" 
-            class="text-purple-600 hover:text-purple-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-purple-100 hover:bg-purple-200">
-        <i class="fas fa-user-times mr-2"></i>
-        Revocar admin
-    </button>
-` : `
-   <button onclick="mostrarModalPermisos(${user.id})" 
-            class="text-blue-600 hover:text-blue-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-blue-100 hover:bg-blue-200">
-        <i class="fas fa-user-shield mr-2"></i>
-        Dar permisos
-    </button>
-`}
-<button onclick="confirmDeactivate(${user.id})" 
-        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md">
-    <i class="fas fa-user-slash"></i> Desactivar
-</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
+                            <tr class="${rowColor} transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.usuario}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeColor}">
+                                        ${user.rol}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.telefono || 'No registrado'}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-4">
+                                        ${user.rol === 'administrador' ? `
+                                            <button onclick="confirmarCambiarRol(${user.id}, 'usuario')" 
+                                                    class="text-purple-600 hover:text-purple-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-purple-100 hover:bg-purple-200">
+                                                <i class="fas fa-user-times mr-2"></i>
+                                                Revocar admin
+                                            </button>
+                                        ` : `
+                                            <button onclick="mostrarModalPermisos(${user.id})" 
+                                                    class="text-blue-600 hover:text-blue-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-blue-100 hover:bg-blue-200">
+                                                <i class="fas fa-user-shield mr-2"></i>
+                                                Dar permisos
+                                            </button>
+                                        `}
+                                        <button onclick="confirmarEliminarUsuario(${user.id})" 
+                                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md">
+                                            <i class="fas fa-user-slash"></i> Desactivar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
                     });
 
                     usuariosContent.innerHTML = html || `
-            <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                    No hay usuarios registrados
-                </td>
-            </tr>
-        `;
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                No hay usuarios registrados
+                            </td>
+                        </tr>
+                    `;
 
-                    // Vincular búsqueda
-                    const searchInput = document.getElementById('searchUsers');
-                    const roleFilter = document.getElementById('user-role-filter');
+                    const searchInput = $('searchUsers');
+                    const roleFilter = $('user-role-filter');
                     if (searchInput) {
                         searchInput.removeEventListener('input', filterUsers);
                         searchInput.addEventListener('input', filterUsers);
@@ -651,38 +778,39 @@ require_once 'includes/auth_check.php';
 
                 } catch (error) {
                     console.error('Error al cargar usuarios:', error);
+                    showError(`Error al cargar los usuarios: ${error.message}`, 'Error', 10000);
                     usuariosContent.innerHTML = `
-            <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-red-500">
-                    Error al cargar los usuarios: ${error.message}
-                </td>
-            </tr>
-        `;
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-red-500">
+                                Error al cargar los usuarios: ${error.message}
+                            </td>
+                        </tr>
+                    `;
                 }
             }
 
-            //FUNCIONES M0DAL ROL
+            // Funciones Modal Rol
             let usuarioSeleccionadoId = null;
 
             function mostrarModalPermisos(userId) {
                 usuarioSeleccionadoId = userId;
-                document.getElementById('permisosModal').style.display = 'flex';
+                $('permisosModal').style.display = 'flex';
             }
 
             function cerrarModalPermisos() {
-                document.getElementById('permisosModal').style.display = 'none';
+                $('permisosModal').style.display = 'none';
             }
 
             function asignarRol(rol) {
                 cerrarModalPermisos();
-                cambiarRol(usuarioSeleccionadoId, rol);
+                confirmarCambiarRol(usuarioSeleccionadoId, rol);
             }
 
             function filterUsers() {
-                const searchInput = document.getElementById('searchUsers');
+                const searchInput = $('searchUsers');
                 const filter = searchInput.value.toLowerCase();
-                const roleFilter = document.getElementById('user-role-filter').value;
-                const rows = document.querySelectorAll('#usuarios-content tr');
+                const roleFilter = $('user-role-filter').value;
+                const rows = $$('#usuarios-content tr');
 
                 rows.forEach(row => {
                     const textContent = row.textContent.toLowerCase();
@@ -692,85 +820,90 @@ require_once 'includes/auth_check.php';
                 });
             }
 
-            function confirmDeactivate(userId) {
-                if (confirm('¿Está seguro de desactivar este usuario?')) {
-                    fetch('includes/delete_user.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `user_id=${userId}`
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(data.message);
-                                location.reload();
-                            } else {
-                                alert('Error: ' + data.message);
+            function confirmarCambiarRol(userId, newRole) {
+                const action = newRole === 'administrador' ? 'otorgar' : 'revocar';
+                showConfirm(
+                    `¿Está seguro de ${action} privilegios de ${newRole === 'administrador' ? 'administrador' : newRole} a este usuario?`,
+                    'Confirmar Cambio de Rol',
+                    async () => {
+                        try {
+                            const formData = new FormData();
+                            formData.append('user_id', userId);
+                            formData.append('role', newRole);
+
+                            const response = await fetch('includes/update_user_role.php', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            const data = await response.json();
+
+                            if (!data.success) {
+                                throw new Error(data.message || 'Error al actualizar rol');
                             }
-                        })
-                        .catch(error => console.error('Error:', error));
-                }
-            }
 
-            async function cambiarRol(userId, newRole) {
-                try {
-                    const action = newRole === 'administrador' ? 'dar' : 'revocar';
-                    if (!confirm(`¿Está seguro de ${action} privilegios de administrador a este usuario?`)) return;
-
-                    const formData = new FormData();
-                    formData.append('user_id', userId);
-                    formData.append('role', newRole);
-
-                    const response = await fetch('includes/update_user_role.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const data = await response.json();
-
-                    if (!data.success) {
-                        throw new Error(data.message || 'Error al actualizar rol');
+                            showSuccess(`Rol ${action === 'otorgar' ? 'otorgado' : 'revocado'} correctamente`, 'Éxito', 1000);
+                            setTimeout(() => {
+                                cargarUsuarios();
+                            }, 1000);
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showError(`Error al actualizar el rol del usuario: ${error.message}`, 'Error', 10000);
+                        }
                     }
-
-                    alert(`Rol ${action === 'dar' ? 'otorgado' : 'revocado'} correctamente`);
-                    cargarUsuarios();
-
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error al actualizar el rol del usuario');
-                }
+                );
             }
 
-            // Add to your DOMContentLoaded event listener
-            document.addEventListener('DOMContentLoaded', function () {
-                // ... existing code ...
-                cargarUsuarios();
-            });
+            function confirmarEliminarUsuario(userId) {
+                showConfirm(
+                    '¿Está seguro de que desea desactivar este usuario?',
+                    'Confirmar Desactivación',
+                    async () => {
+                        try {
+                            const response = await fetch('includes/delete_user.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `user_id=${userId}`
+                            });
 
-            /**
-             * Carga los registros de auditoría desde el backend y los muestra en la tabla de auditoría.
-             * Interactúa con el endpoint 'includes/get_audit_data.php'.
-             */
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+                            }
+
+                            const data = await response.json();
+
+                            if (!data.success) {
+                                throw new Error(data.message || 'Error al desactivar usuario');
+                            }
+
+                            showSuccess(data.message, 'Éxito', 1000);
+                            setTimeout(() => {
+                                cargarUsuarios();
+                            }, 1000);
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showError(`Error al desactivar usuario: ${error.message}`, 'Error', 10000);
+                        }
+                    }
+                );
+            }
 
             async function cargarAuditoria() {
-                const auditContent = document.getElementById('auditoria-content');
+                const auditContent = $('auditoria-content');
 
                 try {
-                    // Get search parameters
-                    const searchTerm = document.getElementById('audit-search')?.value || '';
-                    const actionFilter = document.getElementById('audit-action-filter')?.value || '';
+                    const searchTerm = $('audit-search')?.value || '';
+                    const actionFilter = $('audit-action-filter')?.value || '';
 
-                    // Build URL with parameters
                     let url = 'includes/get_audit_data.php?';
                     if (searchTerm) url += `search=${encodeURIComponent(searchTerm)}&`;
                     if (actionFilter) url += `action=${encodeURIComponent(actionFilter)}`;
 
-                    // Make request to backend
                     const response = await fetch(url);
 
-                    // Check if response is JSON
                     const contentType = response.headers.get('content-type');
                     if (!contentType || !contentType.includes('application/json')) {
                         const text = await response.text();
@@ -783,65 +916,58 @@ require_once 'includes/auth_check.php';
                         throw new Error(data.message || 'Error al cargar datos de auditoría');
                     }
 
-                    // Generate HTML for audit table
                     let html = '';
                     data.audits.forEach(audit => {
-
-
-                        // Process audit details
                         let detalles = audit.detalles_formateados;
                         try {
                             if (typeof detalles === 'string') {
                                 detalles = JSON.parse(detalles);
                             }
 
-                            // Format details based on affected table
                             if (audit.accion === 'crear' && audit.tabla_afectada.includes('usuarios')) {
                                 detalles = `
-                        <div class="flex flex-col">
-                            <span class="font-medium">${detalles.descripcion || 'Nuevo usuario registrado'}</span>
-                            ${detalles.usuario ? `<span class="text-xs">Usuario: ${detalles.usuario}</span>` : ''}
-                            ${detalles.rol ? `<span class="text-xs">Rol: ${detalles.rol}</span>` : ''}
-                        </div>
-                    `;
+                                    <div class="flex flex-col">
+                                        <span class="font-medium">${detalles.descripcion || 'Nuevo usuario registrado'}</span>
+                                        ${detalles.usuario ? `<span class="text-xs">Usuario: ${detalles.usuario}</span>` : ''}
+                                        ${detalles.rol ? `<span class="text-xs">Rol: ${detalles.rol}</span>` : ''}
+                                    </div>
+                                `;
                             } else if (audit.tabla_afectada.includes('herramientas')) {
-                                // Improved for tool creation
                                 if (audit.accion === 'crear') {
                                     detalles = `
-                            <div class="flex flex-col">
-                                <span class="font-medium">${detalles.descripcion || 'Herramienta creada'}</span>
-                                ${detalles.nombre ? `<span class="text-xs">Nombre: ${detalles.nombre}</span>` : ''}
-                                ${detalles.cantidad ? `<span class="text-xs">Cantidad: ${detalles.cantidad}</span>` : ''}
-                                ${detalles.ubicacion ? `<span class="text-xs">Ubicación: ${detalles.ubicacion}</span>` : ''}
-                                ${detalles.estado ? `<span class="text-xs">Estado: ${detalles.estado}</span>` : ''}
-                            </div>
-                        `;
+                                        <div class="flex flex-col">
+                                            <span class="font-medium">${detalles.descripcion || 'Herramienta creada'}</span>
+                                            ${detalles.nombre ? `<span class="text-xs">Nombre: ${detalles.nombre}</span>` : ''}
+                                            ${detalles.cantidad ? `<span class="text-xs">Cantidad: ${detalles.cantidad}</span>` : ''}
+                                            ${detalles.ubicacion ? `<span class="text-xs">Ubicación: ${detalles.ubicacion}</span>` : ''}
+                                            ${detalles.estado ? `<span class="text-xs">Estado: ${detalles.estado}</span>` : ''}
+                                        </div>
+                                    `;
                                 } else {
                                     detalles = `
-                            <div class="flex flex-col">
-                                <span class="font-medium">${detalles.descripcion || 'Acción sobre herramienta'}</span>
-                                ${detalles.nombre ? `<span class="text-xs">Nombre: ${detalles.nombre}</span>` : ''}
-                                ${detalles.cantidad_nueva ? `
-                                    <span class="text-xs">Cantidad: ${detalles.cantidad_anterior} → ${detalles.cantidad_nueva}</span>
-                                    <span class="text-xs">Estado: ${detalles.estado_anterior} → ${detalles.estado_nuevo}</span>
-                                ` : detalles.cantidad ? `<span class="text-xs">Cantidad: ${detalles.cantidad}</span>` : ''}
-                            </div>
-                        `;
+                                        <div class="flex flex-col">
+                                            <span class="font-medium">${detalles.descripcion || 'Acción sobre herramienta'}</span>
+                                            ${detalles.nombre ? `<span class="text-xs">Nombre: ${detalles.nombre}</span>` : ''}
+                                            ${detalles.cantidad_nueva ? `
+                                                <span class="text-xs">Cantidad: ${detalles.cantidad_anterior} → ${detalles.cantidad_nueva}</span>
+                                                <span class="text-xs">Estado: ${detalles.estado_anterior} → ${detalles.estado_nuevo}</span>
+                                            ` : detalles.cantidad ? `<span class="text-xs">Cantidad: ${detalles.cantidad}</span>` : ''}
+                                        </div>
+                                    `;
                                 }
                             } else {
                                 detalles = `
-                        <div class="flex flex-col">
-                            <span class="font-medium">${detalles.descripcion || 'Acción del sistema'}</span>
-                            ${detalles.usuario ? `<span class="text-xs">Usuario: ${detalles.usuario}</span>` : ''}
-                            ${detalles.rol ? `<span class="text-xs">Rol: ${detalles.rol}</span>` : ''}
-                        </div>
-                    `;
+                                    <div class="flex flex-col">
+                                        <span class="font-medium">${detalles.descripcion || 'Acción del sistema'}</span>
+                                        ${detalles.usuario ? `<span class="text-xs">Usuario: ${detalles.usuario}</span>` : ''}
+                                        ${detalles.rol ? `<span class="text-xs">Rol: ${detalles.rol}</span>` : ''}
+                                    </div>
+                                `;
                             }
                         } catch (e) {
                             detalles = `<div class="text-sm">${audit.detalles_formateados || 'Sin detalles'}</div>`;
                         }
 
-                        // Action style configuration
                         const actionConfig = {
                             'crear': { icon: 'fa-plus-circle', bgColor: 'bg-green-50 hover:bg-green-100', textColor: 'text-green-800', borderColor: 'border-green-200', text: 'Creación' },
                             'modificar': { icon: 'fa-edit', bgColor: 'bg-blue-50 hover:bg-blue-100', textColor: 'text-blue-800', borderColor: 'border-blue-200', text: 'Modificación' },
@@ -853,103 +979,79 @@ require_once 'includes/auth_check.php';
 
                         const config = actionConfig[audit.accion] || actionConfig.default;
 
-                        // Generate HTML for row
                         html += `
-                <tr class="${config.bgColor} border-b ${config.borderColor} transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-user-circle ${config.textColor} text-xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium ${config.textColor}">${audit.nombre_usuario || 'Sistema'}</div>
-                                <div class="text-xs ${config.textColor} opacity-70">ID: ${audit.usuario_id || '0'}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} ${config.textColor} border ${config.borderColor}">
-                            <i class="fas ${config.icon} mr-2"></i>
-                            ${config.text}
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs font-medium rounded ${config.bgColor} ${config.textColor} border ${config.borderColor}">
-                            ${audit.tabla_afectada_formateada || 'Sistema'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 ${config.textColor}">
-                        ${detalles}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm ${config.textColor}">
-                        <div class="flex items-center">
-                            <i class="far fa-clock mr-2 opacity-70"></i>
-                            ${audit.fecha_formateada}
-                        </div>
-                    </td>
-                </tr>
-            `;
+                            <tr class="${config.bgColor} border-b ${config.borderColor} transition-colors duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-user-circle ${config.textColor} text-xl"></i>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium ${config.textColor}">${audit.nombre_usuario || 'Sistema'}</div>
+                                            <div class="text-xs ${config.textColor} opacity-70">ID: ${audit.usuario_id || '0'}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} ${config.textColor} border ${config.borderColor}">
+                                        <i class="fas ${config.icon} mr-2"></i>
+                                        ${config.text}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-medium rounded ${config.bgColor} ${config.textColor} border ${config.borderColor}">
+                                        ${audit.tabla_afectada_formateada || 'Sistema'}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 ${config.textColor}">
+                                    ${detalles}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm ${config.textColor}">
+                                    <div class="flex items-center">
+                                        <i class="far fa-clock mr-2 opacity-70"></i>
+                                        ${audit.fecha_formateada}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
                     });
 
-                    // Update table content
                     auditContent.innerHTML = html || `
-            <tr class="bg-gray-50">
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                    No se encontraron registros con los filtros aplicados
-                </td>
-            </tr>
-        `;
+                        <tr class="bg-gray-50">
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                No se encontraron registros con los filtros aplicados
+                            </td>
+                        </tr>
+                    `;
 
                 } catch (error) {
                     console.error('Error al cargar auditoría:', error);
+                    showError(`Error al cargar los registros de auditoría: ${error.message}`, 'Error', 10000);
                     auditContent.innerHTML = `
-            <tr class="bg-red-50">
-                <td colspan="5" class="px-6 py-4 text-center text-red-500">
-                    <div class="flex items-center justify-center">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Error al cargar los registros de auditoría
-                    </div>
-                    <div class="text-xs mt-1">${error.message}</div>
-                </td>
-            </tr>
-        `;
+                        <tr class="bg-red-50">
+                            <td colspan="5" class="px-6 py-4 text-center text-red-500">
+                                <div class="flex items-center justify-center">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    Error al cargar los registros de auditoría
+                                </div>
+                                <div class="text-xs mt-1">${error.message}</div>
+                            </td>
+                        </tr>
+                    `;
                 }
             }
-            // Función para mostrar errores
 
             function mostrarError() {
-                document.querySelectorAll('.valor').forEach(el => {
+                $$('.valor').forEach(el => {
                     if (el.textContent === '0') el.textContent = '--';
                 });
-                document.getElementById('hora-actualizacion').textContent = 'Error';
+                $('hora-actualizacion').textContent = 'Error';
             }
 
-            // Llamar a la función cuando la página se carga
-            document.addEventListener('DOMContentLoaded', function () {
-                console.log("Página cargada, iniciando carga de datos...");
-                cargarDatosActividad();
-                cargarNotificaciones();
-                cargarUsuarios();
-                cargarAuditoria(); // Add this line to load audit data
-
-                // Actualizar cada 30 segundos
-                setInterval(cargarDatosActividad, 30000);
-                setInterval(cargarNotificaciones, 30000);
-            });
-
-            document.getElementById('audit-search').addEventListener('input', function () {
-                cargarAuditoria();
-            });
-
-            document.getElementById('audit-action-filter').addEventListener('change', function () {
-                cargarAuditoria();
-            });
-            // Función mejorada para cargar datos de actividad
             async function cargarDatosActividad() {
                 try {
                     console.log("Cargando datos de actividad...");
 
-                    // Verifica la ruta correcta (ajusta según tu estructura de archivos)
                     const response = await fetch('includes/get_activity_data.php', {
                         method: 'GET',
                         headers: {
@@ -973,7 +1075,6 @@ require_once 'includes/auth_check.php';
                         throw new Error(data.message || 'Respuesta no válida del servidor');
                     }
 
-                    // Actualizar la interfaz de usuario
                     const updateField = (selector, value) => {
                         const element = document.querySelector(selector);
                         if (element) element.textContent = value !== undefined ? value : '--';
@@ -988,28 +1089,19 @@ require_once 'includes/auth_check.php';
                 } catch (error) {
                     console.error('Error al cargar datos:', error);
                     mostrarError();
-
-                    // Mostrar notificación más detallada (opcional)
-                    const notification = document.createElement('div');
-                    notification.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg';
-                    notification.textContent = 'Error al cargar actividad. Ver consola para detalles.';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 5000);
+                    showError(`Error al cargar actividad: ${error.message}`, 'Error', 10000);
                 }
             }
 
-
-            // Función para cargar las herramientas por agotarse
             async function cargarNotificaciones() {
-                const notificationContent = document.getElementById('notification-content');
-                const notificationCount = document.getElementById('notification-count');
+                const notificationContent = $('notification-content');
+                const notificationCount = $('notification-count');
 
                 try {
                     notificationContent.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">Cargando...</div>';
 
                     const response = await fetch('includes/get_low_stock_tools.php');
 
-                    // Verifica si la respuesta es JSON
                     const contentType = response.headers.get('content-type');
                     if (!contentType || !contentType.includes('application/json')) {
                         const text = await response.text();
@@ -1023,28 +1115,25 @@ require_once 'includes/auth_check.php';
                     }
 
                     if (data.data.length > 0) {
-                        // Actualizar contador
                         notificationCount.textContent = data.data.length;
                         notificationCount.classList.remove('hidden');
 
-
-                        // Construir contenido de notificaciones
                         let html = '';
                         data.data.forEach(tool => {
                             const estadoClass = tool.estado === 'recargar' ? 'text-red-600' : 'text-yellow-600';
                             const estadoText = tool.estado === 'recargar' ? '<i class="fas fa-exclamation-circle mr-1"></i>Agotándose' : '<i class="fas fa-exclamation-triangle mr-1"></i>Medio';
 
                             html += `
-                    <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50">
-                        <div class="flex justify-between items-center">
-                            <span class="font-medium text-gray-800">${tool.nombre}</span>
-                            <span class="text-xs ${estadoClass}">${estadoText}</span>
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1">
-                            Cantidad: ${tool.cantidad} | ${tool.ubicacion || 'Sin ubicación'}
-                        </div>
-                    </div>
-                `;
+                                <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium text-gray-800">${tool.nombre}</span>
+                                        <span class="text-xs ${estadoClass}">${estadoText}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Cantidad: ${tool.cantidad} | ${tool.ubicacion || 'Sin ubicación'}
+                                    </div>
+                                </div>
+                            `;
                         });
 
                         notificationContent.innerHTML = html;
@@ -1056,69 +1145,76 @@ require_once 'includes/auth_check.php';
                 } catch (error) {
                     console.error('Error al cargar notificaciones:', error);
                     notificationCount.classList.add('hidden');
+                    showError(`Error al cargar notificaciones: ${error.message}`, 'Error', 10000);
                     notificationContent.innerHTML = `
-            <div class="px-4 py-3 border-b border-gray-100">
-                <div class="text-red-600 font-medium">Error al cargar notificaciones</div>
-                <div class="text-xs text-gray-500 mt-1">${error.message}</div>
-            </div>
-        `;
+                        <div class="px-4 py-3 border-b border-gray-100">
+                            <div class="text-red-600 font-medium">Error al cargar notificaciones</div>
+                            <div class="text-xs text-gray-500 mt-1">${error.message}</div>
+                        </div>
+                    `;
                 }
             }
-            // Mostrar/ocultar dropdown
+
             document.getElementById('notification-btn').addEventListener('click', function (e) {
                 e.stopPropagation();
-                const dropdown = document.getElementById('notification-dropdown');
+                const dropdown = $('notification-dropdown');
                 dropdown.classList.toggle('hidden');
 
-                // Cargar notificaciones solo cuando se abre el dropdown
                 if (!dropdown.classList.contains('hidden')) {
                     cargarNotificaciones();
                 }
             });
 
-            // Llamar a la función cuando la página se carga
             document.addEventListener('DOMContentLoaded', function () {
                 console.log("Página cargada, iniciando carga de datos...");
                 cargarDatosActividad();
                 cargarNotificaciones();
+                cargarUsuarios();
+                cargarAuditoria();
 
-                // Actualizar cada 30 segundos
                 setInterval(cargarDatosActividad, 30000);
                 setInterval(cargarNotificaciones, 30000);
+
+                // Configurar eventos de escape para cerrar modales
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') {
+                        const modalSystem = $('modalSystem');
+                        if (!modalSystem.classList.contains('hidden') && modalSystem.timeoutId) {
+                            return; // No cerrar si el modal tiene temporizador activo
+                        }
+                        $$('.modal').forEach(modal => {
+                            if (!modal.classList.contains('hidden')) {
+                                if (modal.id === 'permisosModal') {
+                                    cerrarModalPermisos();
+                                } else {
+                                    hideModal();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // Cerrar modales al hacer clic fuera
+                $$('.modal').forEach(modal => {
+                    modal.addEventListener('click', function (e) {
+                        if (e.target === this && (!this.timeoutId || this.id !== 'modalSystem')) {
+                            if (this.id === 'permisosModal') {
+                                cerrarModalPermisos();
+                            } else {
+                                hideModal();
+                            }
+                        }
+                    });
+                });
             });
 
-            async function eliminarUsuario(userId) {
-                try {
-                    if (!confirm('¿Está seguro de que desea eliminar este usuario?')) return;
+            $('audit-search').addEventListener('input', function () {
+                cargarAuditoria();
+            });
 
-                    const response = await fetch('includes/delete_user.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `user_id=${userId}`
-                    });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`Error HTTP ${response.status}: ${errorText}`);
-                    }
-
-                    const data = await response.json();
-
-                    if (!data.success) {
-                        throw new Error(data.message || 'Error al eliminar usuario');
-                    }
-
-                    alert(data.message);
-                    cargarUsuarios();
-
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert(`Error: ${error.message}`);
-                }
-            }
-
+            $('audit-action-filter').addEventListener('change', function () {
+                cargarAuditoria();
+            });
         </script>
 </body>
 
