@@ -556,13 +556,17 @@ if (isset($_POST['rechazar_reserva'])) {
             background-color: #4A655D;
             color: white;
         }
+
+        #modalSystem {
+            z-index: 60; /* Incrementado para asegurar que esté por encima de modal-reporte */
+        }
     </style>
 </head>
 
 <body class="bg-gray-50">
 
     <!-- Modal System -->
-    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-60">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div id="modalHeader" class="flex justify-between items-center border-b px-5 py-4">
                 <div class="flex items-center">
@@ -811,7 +815,7 @@ if (isset($_POST['rechazar_reserva'])) {
                                             <div class="flex items-center space-x-2">
                                                 <button type="submit" name="aceptar_reserva"
                                                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center">
-                                                    <i class="fas f a-check-circle mr-2"></i> Aceptar
+                                                    <i class="fas fa-check-circle mr-2"></i> Aceptar
                                                 </button>
                                                 <button type="submit" name="rechazar_reserva"
                                                     class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center"
@@ -1359,11 +1363,19 @@ if (isset($_POST['rechazar_reserva'])) {
             }
 
             function confirmarGenerarReporte() {
+                // Cerrar el modal de reporte antes de mostrar el modal de confirmación
+                hideModalReporte();
                 showConfirm(
                     '¿Está seguro de que desea generar el reporte de devoluciones pendientes?',
                     'Confirmar Reporte',
                     () => {
-                        $('form-reporte').submit();
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.innerHTML = `
+                            <input type="hidden" name="generar_reporte" value="1">
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
                     }
                 );
             }
@@ -1576,93 +1588,86 @@ if (isset($_POST['rechazar_reserva'])) {
                 const rows = document.querySelectorAll('#tabla-historial tbody tr');
 
                 rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
+                    const text = row.text
+                                        Content.toLowerCase();
                     row.style.display = text.includes(searchTerm) ? '' : 'none';
                 });
             });
 
-                        // Función para aplicar todos los filtros al historial
-            function aplicarFiltrosHistorial() {
-                const searchTerm = document.getElementById('buscar-historial').value.toLowerCase();
+            // Filtros para el historial
+            function aplicarFiltros() {
                 const tipoFiltro = document.getElementById('filtro-tipo').value;
                 const estadoFiltro = document.getElementById('filtro-estado').value;
-
+                const searchTerm = document.getElementById('buscar-historial').value.toLowerCase();
                 const rows = document.querySelectorAll('#tabla-historial tbody tr');
 
                 rows.forEach(row => {
-                    const aprendiz = row.cells[0].textContent.toLowerCase();
-                    const herramienta = row.cells[1].textContent.toLowerCase();
-                    const tipo = row.cells[2].textContent.toLowerCase();
-                    const estado = row.cells[4].querySelector('span').dataset.estado.toLowerCase();
+                    const tipoHerramienta = row.querySelector('td:nth-child(3) span').textContent.toLowerCase();
+                    const estado = row.querySelector('td:nth-child(5) span').dataset.estado.toLowerCase();
+                    const text = row.textContent.toLowerCase();
 
-                    const coincideBusqueda = aprendiz.includes(searchTerm) || herramienta.includes(searchTerm);
-                    const coincideTipo = tipoFiltro === 'todos' || tipo === tipoFiltro;
-                    const coincideEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
+                    const cumpleBusqueda = text.includes(searchTerm);
+                    const cumpleTipo = tipoFiltro === 'todos' || tipoHerramienta === tipoFiltro;
+                    const cumpleEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
 
-                    row.style.display = coincideBusqueda && coincideTipo && coincideEstado ? '' : 'none';
+                    row.style.display = cumpleBusqueda && cumpleTipo && cumpleEstado ? '' : 'none';
                 });
-
-                // Mostrar mensaje si no hay resultados
-                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none').length;
-                if (visibleRows === 0) {
-                    showInfo('No se encontraron resultados que coincidan con los filtros aplicados.', 'Sin Resultados', 7000);
-                }
             }
 
             // Event listeners para los filtros
-            document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltrosHistorial);
-            document.getElementById('filtro-estado').addEventListener('change', aplicarFiltrosHistorial);
-            document.getElementById('buscar-historial').addEventListener('input', aplicarFiltrosHistorial);
+            document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltros);
+            document.getElementById('filtro-estado').addEventListener('change', aplicarFiltros);
+            document.getElementById('buscar-historial').addEventListener('input', aplicarFiltros);
 
             // Reiniciar filtros
-            document.getElementById('reset-filtros').addEventListener('click', () => {
+            document.getElementById('reset-filtros').addEventListener('click', function () {
                 document.getElementById('buscar-historial').value = '';
                 document.getElementById('filtro-tipo').value = 'todos';
                 document.getElementById('filtro-estado').value = 'todos';
-                aplicarFiltrosHistorial();
-            });
-
-            // Manejo de pestañas para gráficos
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Quitar clase activa de todos los botones y contenidos
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-
-                    // Activar el botón y contenido seleccionado
-                    button.classList.add('active');
-                    document.getElementById(button.dataset.tab).classList.add('active');
+                const rows = document.querySelectorAll('#tabla-historial tbody tr');
+                rows.forEach(row => {
+                    row.style.display = '';
                 });
             });
 
-            // Mostrar mensajes de sesión
+            // Manejo de pestañas para gráficos
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    // Remover clase activa de todas las pestañas y contenidos
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                    // Activar la pestaña y contenido seleccionados
+                    this.classList.add('active');
+                    const tabId = this.dataset.tab;
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            // Mostrar mensaje de éxito o error si está en la sesión
             <?php if (isset($_SESSION['success'])): ?>
-                showSuccess(<?php echo json_encode($_SESSION['success']); ?>, 'Éxito', 1000);
+                showSuccess('<?php echo htmlspecialchars($_SESSION['success']); ?>', 'Éxito', 7000);
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
 
             <?php if (isset($_SESSION['error'])): ?>
-                showError(<?php echo json_encode($_SESSION['error']); ?>, 'Error', 10000);
+                showError('<?php echo htmlspecialchars($_SESSION['error']); ?>', 'Error', 10000);
                 <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
-            <?php if (!empty($mensajeExito)): ?>
-                showSuccess(<?php echo json_encode($mensajeExito); ?>, 'Éxito', 1000);
-            <?php endif; ?>
-
-            <?php if (!empty($mensajeError)): ?>
-                showError(<?php echo json_encode($mensajeError); ?>, 'Error', 10000);
-            <?php endif; ?>
-
-            // Mostrar mensaje de error de stock si existe
+            // Mostrar mensaje de error de stock si está presente
             <?php if (isset($_SESSION['error_stock'])): ?>
-                showError(<?php echo json_encode($_SESSION['error_stock']); ?>, 'Error de Stock', 10000);
+                showError('<?php echo htmlspecialchars($_SESSION['error_stock']); ?>', 'Error de Stock', 10000);
                 <?php unset($_SESSION['error_stock']); ?>
             <?php endif; ?>
         </script>
     </main>
+
+    <footer class="bg-[#2D3A36] text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
 </body>
 </html>
