@@ -990,9 +990,9 @@ $herramientas = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                    <?= htmlspecialchars($herramienta['nombre'] ?? '') ?>
-                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap"> 
+    <div class="text-sm font-medium text-gray-900"><?php echo ucwords(strtolower($herramienta['nombre'])); ?></div> 
+</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-black">
                                     <?= htmlspecialchars($stockTotal) ?>
                                 </td>
