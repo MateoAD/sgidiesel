@@ -318,7 +318,7 @@ require_once 'includes/auth_check.php';
                             <div class="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-inner">
                                 <i class="fas fa-clipboard-list text-white text-4xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Ver Préstamos</h3>
+                            <h3 class="text-xl font-bold mb-2">Ver Reportes</h3>
                             <p class="text-gray-100">Consultar préstamos activos</p>
                         </div>
                     </a>
