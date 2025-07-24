@@ -1132,26 +1132,31 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-end items-center space-x-3">
-                                    <button
-                                        class="btn-editar text-blue-600 hover:text-blue-900 hover:bg-blue-50 p-2 rounded-full transition-colors"
-                                        data-id="<?= $herramienta['id'] ?? 0 ?>" data-tipo="<?= $tipoSeleccionado ?>"
-                                        onclick="mostrarModalEditar(<?= $herramienta['id'] ?? 0 ?>, '<?= $tipoSeleccionado ?>')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button
-                                        class="btn-eliminar text-red-600 hover:text-red-900 hover:bg-red-50 p-2 rounded-full transition-colors"
-                                        data-id="<?= $herramienta['id'] ?? 0 ?>" data-tipo="<?= $tipoSeleccionado ?>"
-                                        onclick="mostrarModalEliminar(<?= $herramienta['id'] ?? 0 ?>, '<?= $tipoSeleccionado ?>')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    <button
-                                        onclick="abrirModalBaja('<?= $herramienta['id'] ?>', '<?= $tipoSeleccionado ?>', '<?= htmlspecialchars($herramienta['nombre']) ?>')"
-                                        class="text-purple-600 hover:text-purple-900 hover:bg-purple-50 p-2 rounded-full transition-colors">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                    </button>
-                                </td>
+                               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-end items-center space-x-3">
+        <button
+            class="btn-editar text-blue-600 hover:text-blue-900 focus:outline-none"
+            data-id="<?= $herramienta['id'] ?? 0 ?>" data-tipo="<?= $tipoSeleccionado ?>"
+            onclick="mostrarModalEditar(<?= $herramienta['id'] ?? 0 ?>, '<?= $tipoSeleccionado ?>')">
+             <span class="inline-flex items-center justify-center w-9 h-9 rounded-md border border-blue-200 bg-blue-50 hover:bg-blue-100 transition">
+            <i class="fas fa-edit"></i>
+        </button>
+    </span>
+        <button
+            class="btn-eliminar text-red-600 hover:text-red-900 focus:outline-none"
+            data-id="<?= $herramienta['id'] ?? 0 ?>" data-tipo="<?= $tipoSeleccionado ?>"
+            onclick="mostrarModalEliminar(<?= $herramienta['id'] ?? 0 ?>, '<?= $tipoSeleccionado ?>')">
+              <span class="inline-flex items-center justify-center w-9 h-9 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 transition">
+            <i class="fas fa-trash"></i>
+        </button>
+    </span>
+        <button
+            onclick="abrirModalBaja('<?= $herramienta['id'] ?>', '<?= $tipoSeleccionado ?>', '<?= htmlspecialchars($herramienta['nombre']) ?>')"
+            class="focus:outline-none text-purple-600 hover:text-purple-900">
+            <span class="inline-flex items-center justify-center w-9 h-9 rounded-md border border-purple-200 bg-purple-50 hover:bg-purple-100 transition">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </span>
+</td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -1159,28 +1164,23 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
 
             <!-- Sección de Historial de Bajas -->
-            <div class="mt-8">
-                <h2 class="text-2xl font-bold mb-4">Historial de Bajas de Herramientas</h2>
-                <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
-                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
-                        <thead class="bg-gray-800 text-white">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Herramienta
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tipo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cantidad
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Motivo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Lugar
-                                    Salida</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Lugar
-                                    Entrada</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Responsable
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+        <div class="mt-8">
+    <h2 class="text-2xl font-bold mb-4">Historial de Bajas de Herramientas</h2>
+    <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
+        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Herramienta</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tipo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Cantidad</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Motivo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Lugar Salida</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Lugar Entrada</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Responsable</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
                             <?php
                             // Consulta para obtener el historial de bajas con nombres de herramientas
                             $query = "SELECT b.*, 
