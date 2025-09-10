@@ -13,13 +13,13 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
     $checkActive = $db->prepare("SELECT activo FROM usuarios WHERE id = ?");
     $checkActive->execute([$_SESSION['user_id']]);
     $activeStatus = $checkActive->fetchColumn();
-    
+
     if ($activeStatus == 0) {
         session_destroy();
         header('Location: index.php?error=inactive');
         exit;
     }
-    
+
     header('Location: ' . ($_SESSION['rol'] === 'administrador' ? 'dashboard.php' : 'user_dashboard.php'));
     exit;
 }
@@ -33,7 +33,6 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGS de Taller Diesel - Iniciar Sesión</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" type="image/png" href="./img/favicon-16x16.png">
     <style>
@@ -44,6 +43,7 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             background-repeat: no-repeat;
             background-attachment: fixed;
             position: relative;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         body::before {
@@ -57,20 +57,294 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             z-index: -1;
         }
 
+        .auth-container {
+            width: 90%;
+            max-width: 900px;
+            min-height: 500px;
+            margin: 2rem auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-wrapper {
+            display: flex;
+            width: 200%;
+            height: 100%;
+            transition: transform 0.6s ease;
+        }
+
+        .panel {
+            width: 50%;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .welcome-panel {
+            background: linear-gradient(135deg, #56B847 0%, #4A655D 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .form-panel {
+            background: white;
+        }
+
+        /* Login state */
+        .login-state .slider-wrapper {
+            transform: translateX(0);
+        }
+
+        /* Register state */
+        .register-state .slider-wrapper {
+            transform: translateX(-50%);
+        }
+
+        .welcome-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-text {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .toggle-btn:hover {
+            background: white;
+            color: #4A655D;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .form-subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.9rem 0.9rem 0.9rem 2.8rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #56B847;
+            box-shadow: 0 0 0 3px rgba(86, 184, 71, 0.1);
+            background: white;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #56B847, #4A655D);
+            color: white;
+            padding: 0.9rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(86, 184, 71, 0.3);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-link {
+            color: #56B847;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .form-link:hover {
+            text-decoration: underline;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            margin-right: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .custom-checkbox:checked {
+            background-color: #56B847;
+            border-color: #56B847;
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+        }
+
         .loading-spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, .3);
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
         }
 
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            border: 1px solid #feb2b2;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            border: 1px solid #9ae6b4;
+        }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #a0aec0;
+            cursor: pointer;
         }
 
         /* Animaciones para los formularios */
@@ -90,10 +364,240 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             height: auto;
             transform: translateX(0);
         }
+
+             /* Responsive adjustments - Mobile First Approach */
+        @media (max-width: 1024px) {
+            .auth-container {
+                width: 90%;
+                margin: 1rem auto;
+                border-radius: 12px;
+            }
+            
+            header .container {
+                padding: 0.75rem 1rem;
+            }
+            
+            header img {
+                height: 14px;
+                margin-right: 0.75rem;
+            }
+            
+            header h1 {
+                font-size: 1.1rem;
+            }
+            
+            header p {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-container {
+                width: 95%;
+                min-height: auto;
+                margin: 0.5rem auto;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .panel {
+                padding: 1.25rem;
+            }
+
+            .welcome-title {
+                font-size: 1.4rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .welcome-text {
+                font-size: 0.85rem;
+                margin-bottom: 1.25rem;
+                line-height: 1.4;
+            }
+
+            .form-title {
+                font-size: 1.25rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .form-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .form-input {
+                padding: 0.85rem 0.85rem 0.85rem 2.8rem;
+                font-size: 16px; /* Previene zoom en iOS */
+                border-radius: 8px;
+                min-height: 48px; /* Mejor tamaño táctil */
+            }
+
+            .input-icon {
+                left: 0.9rem;
+                font-size: 1rem;
+            }
+
+            .toggle-password {
+                right: 0.9rem;
+                font-size: 1rem;
+            }
+
+            .checkbox-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .form-link {
+                font-size: 0.85rem;
+                margin-top: 0.5rem;
+            }
+
+            .submit-btn, .toggle-btn {
+                padding: 0.9rem;
+                font-size: 0.95rem;
+                min-height: 50px;
+                border-radius: 8px;
+                font-weight: 600;
+            }
+
+            .form-footer {
+                margin-top: 1.5rem;
+            }
+
+            .form-footer p {
+                font-size: 0.85rem;
+            }
+
+            main {
+                padding: 1rem 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                width: 100%;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .panel {
+                padding: 1rem;
+            }
+
+            .welcome-title {
+                font-size: 1.3rem;
+            }
+
+            .welcome-text {
+                font-size: 0.8rem;
+            }
+
+            .form-title {
+                font-size: 1.2rem;
+            }
+
+            .form-input {
+                padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+                font-size: 16px;
+                min-height: 44px;
+            }
+
+            .input-icon {
+                left: 0.8rem;
+                font-size: 0.9rem;
+            }
+
+            .toggle-password {
+                right: 0.8rem;
+                font-size: 0.9rem;
+            }
+
+            .submit-btn, .toggle-btn {
+                padding: 0.8rem;
+                font-size: 0.9rem;
+                min-height: 46px;
+            }
+
+            .checkbox-group label {
+                font-size: 0.8rem;
+            }
+
+            /* Optimización específica para formularios móviles */
+            .input-group {
+                margin-bottom: 1rem;
+            }
+
+            /* Mejorar la experiencia táctil */
+            .submit-btn:active, .toggle-btn:active {
+                transform: scale(0.98);
+            }
+
+            /* Asegurar que los inputs no se salgan de la pantalla */
+            input, select, textarea {
+                max-width: 100%;
+            }
+
+            /* Optimizar el logo en móviles */
+            .container.mx-auto.flex.items-center.px-4.py-3.justify-center img {
+                height: 12px;
+                max-width: 80px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .panel {
+                padding: 0.75rem;
+            }
+
+            .form-title {
+                font-size: 1.1rem;
+            }
+
+            .form-input {
+                padding: 0.65rem 0.65rem 0.65rem 2.3rem;
+                font-size: 14px;
+            }
+
+            .input-icon {
+                left: 0.7rem;
+                font-size: 0.85rem;
+            }
+
+            .submit-btn, .toggle-btn {
+                padding: 0.7rem;
+                font-size: 0.85rem;
+            }
+
+            .welcome-title {
+                font-size: 1.1rem;
+            }
+
+            .welcome-text {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Orientación landscape en móviles */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .auth-container {
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .panel {
+                padding: 1rem;
+            }
+
+            .input-group {
+                margin-bottom: 0.75rem;
+            }
+        }
     </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen">
+<body class="flex flex-col min-h-screen">
     <header class="bg-[#4A655D] text-white shadow-md">
         <div class="container mx-auto flex items-center px-4 py-3">
             <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto mr-4">
@@ -105,259 +609,234 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
     </header>
 
     <main class="flex-grow flex items-center justify-center py-8">
-        <div class="w-full max-w-md mx-4">
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div class="bg-[#56B847] text-white text-center py-4">
-                    <h1 class="text-2xl font-bold">SGS DE TALLER DIESEL</h1>
-                    <p class="text-sm mt-1">Sistema de Gestión de Taller</p>
-                </div>
+        <div class="auth-container login-state bg-white" id="authContainer">
+            <div class="slider-wrapper">
+                <!-- Login Panel -->
+                <div class="panel form-panel">
+                    <div style="max-width: 400px; margin: 0 auto; width: 100%;">
+                        <div class="container mx-auto flex items-center px-4 py-3 justify-center">
+    <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto">
+</div>
+                        <h2 class="form-title">Iniciar Sesión</h2>
+                        <p class="form-subtitle">SGS de Taller Diesel</p>
 
-                <!-- Contenedor de formularios -->
-                <div class="relative overflow-hidden">
-                    <!-- Formulario de Login -->
-                    <div id="loginFormContainer" class="form-container form-visible">
-                        <form class="p-6" id="loginForm">
-                            <div id="errorMessage" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
+                        <form id="loginForm">
+                            <div id="loginErrorMessage" class="error-message hidden"></div>
+
+                            <div class="input-group">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="username" name="username" class="form-input"
+                                    placeholder="Nombre Completo" required autocomplete="username">
                             </div>
 
-                            <div class="mb-4">
-                                <label for="username"
-                                    class="block text-gray-700 text-sm font-bold mb-2">Nombre Completo:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fas fa-user"></i></span>
-                                    <input type="text" id="username" name="username" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Ingrese su nombre completo" autocomplete="username">
-                                </div>
+                            <div class="input-group">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="password" name="password" class="form-input"
+                                    placeholder="Contraseña" required autocomplete="current-password">
+                                <i class="fas fa-eye toggle-password" id="togglePassword"></i>
                             </div>
 
-                            <div class="mb-4">
-                                <label for="password"
-                                    class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fas fa-lock"></i></span>
-                                    <input type="password" id="password" name="password" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Ingrese su contraseña" autocomplete="current-password">
-                                    <button type="button" id="togglePassword" class="px-3 text-gray-500">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="remember" name="remember" class="custom-checkbox" style="accent-color: #4BFF04FF;">
+                                <label for="remember" style="font-size: 0.9rem; color: #4a5568;">Recordar sesión</label>
+                                <a href="#" id="forgotPassword" class="form-link ml-auto">¿Olvidaste tu contraseña?</a>
                             </div>
 
-                            <div class="mb-4 flex justify-between items-center">
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="remember" name="remember" class="mr-2">
-                                    <label for="remember" class="text-sm text-gray-600">Recordar sesión</label>
-                                </div>
-                                <a href="#" id="forgotPassword" class="text-[#00AF00] hover:underline text-sm">
-                                    ¿Olvidaste tu contraseña?
-                                </a>
-                            </div>
-                           
-                            <button type="submit" id="loginButton"
-                                class="w-full bg-[#00AF00] text-white font-bold py-2 px-4 rounded hover:bg-[#4A655D] transition duration-300 flex justify-center items-center">
-                                <span id="buttonText">INGRESAR</span>
-                                <div id="loadingSpinner" class="loading-spinner ml-2"></div>
+                            <button type="submit" class="submit-btn" id="loginButton">
+                                <span id="loginButtonText">Ingresar</span>
+                                <div id="loginLoadingSpinner" class="loading-spinner hidden"></div>
                             </button>
 
-                            <div class="mt-4 text-center">
-                                <p class="text-sm text-gray-600">¿No tienes una cuenta?
-                                    <a href="#" id="showRegisterForm"
-                                        class="text-[#00AF00] font-medium hover:underline">Regístrate aquí</a>
+                            <div class="form-footer">
+                                <p style="color: #718096;">¿No tienes una cuenta?
+                                    <a href="#" id="showRegisterForm" class="form-link">Regístrate aquí</a>
                                 </p>
                             </div>
                         </form>
                     </div>
+                </div>
 
-                    <!-- Formulario de Registro -->
-                    <div id="registerFormContainer" class="form-container form-hidden">
-                        <form class="p-6" id="registerForm">
-                            <div id="registerErrorMessage"
-                                class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded text-sm"></div>
-                            <div id="registerSuccessMessage"
-                                class="hidden mb-4 p-3 bg-green-100 text-green-700 rounded text-sm"></div>
+                <!-- Welcome Panel for Login -->
+                <div class="panel welcome-panel">
+                    <div style="max-width: 300px; margin: 0 auto;">
+                        <h2 class="welcome-title">¡Bienvenido de vuelta!</h2>
+                        <p class="welcome-text">Para acceder al inventario del taller diesel, por favor inicie sesión con su
 
-                            <h2 class="text-xl font-bold text-[#05976A] mb-4 text-center">Crear nueva cuenta</h2>
+                            información personal</p>
+                        <button class="toggle-btn" id="loginWelcomeBtn">Registrarse</button>
+                    </div>
+                </div>
 
-                            <div class="mb-4">
-                                <label for="registerUsername"
-                                    class="block text-gray-700 text-sm font-bold mb-2">Nombre Completo:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fas fa-user"></i></span>
-                                    <input type="text" id="registerUsername" name="username" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Ingrese su nombre completo" autocomplete="username">
-                                </div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Tipo de usuario:</label>
-                                <div class="flex flex-col gap-2">
-                                    <label class="inline-flex items-center">
-                                        <input type="radio" name="role" value="aprendiz" class="form-radio text-[#05976A]" checked onchange="document.getElementById('fichaContainer').classList.remove('hidden');">
-                                        <span class="ml-2">Aprendiz</span>
-                                    </label>
-                                </div>
+                <!-- Register Panel -->
+                <div class="panel form-panel">
+                    <div style="max-width: 400px; margin: 0 auto; width: 100%;">
+                        <h2 class="form-title">Crear Cuenta</h2>
+                        <p class="form-subtitle">Únete a nuestro sistema</p>
+
+                        <form id="registerForm">
+                            <div id="registerErrorMessage" class="error-message hidden"></div>
+                            <div id="registerSuccessMessage" class="success-message hidden"></div>
+
+                            <div class="input-group">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="registerUsername" name="username" class="form-input"
+                                    placeholder="Nombre Completo" required autocomplete="username">
                             </div>
 
-
-                            <!-- Campo de Ficha (inicialmente oculto) -->
-                            <div id="fichaContainer" class="mb-4">
-                                <label for="registerFicha" class="block text-gray-700 text-sm font-bold mb-2">Número de Ficha:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fas fa-id-card"></i></span>
-                                    <input type="text" id="registerFicha" name="ficha" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Ingrese un número de ficha valido">
-                                </div>
-                                <p id="fichaError" class="text-red-500 text-xs italic hidden">La ficha ingresada no es válida</p>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="registerPassword"
-                                    class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fas fa-lock"></i></span>
-                                    <input type="password" id="registerPassword" name="password" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Crea una contraseña segura" autocomplete="new-password">
-                                    <button type="button" id="toggleRegisterPassword" class="px-3 text-gray-500">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">La contraseña debe tener al menos 8 caracteres</p>
+                            <div class="input-group">
+                                <i class="fas fa-id-card input-icon"></i>
+                                <input type="text" id="registerFicha" name="ficha" class="form-input"
+                                    placeholder="Número de Ficha" required>
                             </div>
 
-                            <div class="mb-4">
-                                <label for="confirmPassword"
-                                    class="block text-gray-700 text-sm font-bold mb-2">Confirmar Contraseña:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fas fa-lock"></i></span>
-                                    <input type="password" id="confirmPassword" name="confirmPassword" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Repite tu contraseña" autocomplete="new-password">
-                                </div>
+                            <div class="input-group">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="registerPassword" name="password" class="form-input"
+                                    placeholder="Contraseña (min. 8 caracteres)" required autocomplete="new-password">
+                                <i class="fas fa-eye toggle-password" id="toggleRegisterPassword"></i>
                             </div>
 
-                            <div class="mb-4">
-                                <label for="registerPhone" class="block text-gray-700 text-sm font-bold mb-2">Número de
-                                    WhatsApp:</label>
-                                <div class="flex items-center border rounded shadow-sm">
-                                    <span class="px-3 text-gray-500"><i class="fab fa-whatsapp"></i></span>
-                                    <input type="tel" id="registerPhone" name="phone" required
-                                        class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                                        placeholder="Ej: +573001234567">
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">Formato: +573001234567 (incluyendo código de país)
-                                </p>
+                            <div class="input-group">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input"
+                                    placeholder="Confirmar Contraseña" required autocomplete="new-password">
                             </div>
 
-                            <button type="submit" id="registerButton"
-                                class="w-full bg-[#00AF00] text-white font-bold py-2 px-4 rounded hover:bg-[#4A655D] transition duration-300 flex justify-center items-center">
-                                <span id="registerButtonText">REGISTRARSE</span>
-                                <div id="registerLoadingSpinner" class="loading-spinner ml-2"></div>
+                            <div class="input-group">
+                                <i class="fab fa-whatsapp input-icon"></i>
+                                <input type="tel" id="registerPhone" name="phone" class="form-input"
+                                    placeholder="+573001234567" required>
+                            </div>
+
+                            <button type="submit" class="submit-btn" id="registerButton">
+                                <span id="registerButtonText">Registrarse</span>
+                                <div id="registerLoadingSpinner" class="loading-spinner hidden"></div>
                             </button>
 
-                            <div class="mt-4 text-center">
-                                <p class="text-sm text-gray-600">¿Ya tienes una cuenta?
-                                    <a href="#" id="showLoginForm"
-                                        class="text-[#00AF00] font-medium hover:underline">Inicia sesión aquí</a>
+                            <div class="form-footer">
+                                <p style="color: #718096;">¿Ya tienes una cuenta?
+                                    <a href="#" id="showLoginForm" class="form-link">Inicia sesión aquí</a>
                                 </p>
                             </div>
                         </form>
+                    </div>
+                </div>
+
+                <!-- Welcome Panel for Register -->
+                <div class="panel welcome-panel">
+                    <div style="max-width: 300px; margin: 0 auto;">
+                        <h2 class="welcome-title">¡Hola, aprendiz!</h2>
+                        <p class="welcome-text">Ingresa tus datos personales y comienza tu experiencia con nosotros</p>
+
+                        <button class="toggle-btn" id="registerWelcomeBtn">Iniciar Sesión</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal para recuperación de contraseña -->
-    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-[#05976A]">Recuperar Contraseña</h3>
-                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+    <!-- Password Recovery Modal -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Recuperar Contraseña</h3>
+                <button id="closeModal" class="close-modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <form id="recoveryForm">
-                <div id="recoveryMessage" class="hidden mb-4 p-3 rounded text-sm"></div>
-                <div class="mb-4">
-                    <label for="recoveryUsername" class="block text-gray-700 text-sm font-bold mb-2">Usuario:</label>
-                    <div class="flex items-center border rounded shadow-sm">
-                        <span class="px-3 text-gray-500"><i class="fas fa-user"></i></span>
-                        <input type="text" id="recoveryUsername" required
-                            class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                            placeholder="Ingrese su usuario registrado">
-                    </div>
+                <div id="recoveryMessage" class="hidden"></div>
+
+                <div class="input-group">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="recoveryUsername" class="form-input" placeholder="Usuario" required>
                 </div>
-                <div class="mb-4">
-                    <label for="recoveryPhone" class="block text-gray-700 text-sm font-bold mb-2">Número de
-                        WhatsApp:</label>
-                    <div class="flex items-center border rounded shadow-sm">
-                        <span class="px-3 text-gray-500"><i class="fab fa-whatsapp"></i></span>
-                        <input type="tel" id="recoveryPhone" required
-                            class="w-full py-2 px-2 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#05976A] focus:border-transparent"
-                            placeholder="Ingrese su número de WhatsApp">
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Formato: +573001234567 (incluyendo código de país)</p>
+
+                <div class="input-group">
+                    <i class="fab fa-whatsapp input-icon"></i>
+                    <input type="tel" id="recoveryPhone" class="form-input" placeholder="+573001234567" required>
                 </div>
-                <button type="submit" id="recoveryButton"
-                    class="w-full bg-[#05976A] text-white font-bold py-2 px-4 rounded hover:bg-[#047A5B] transition duration-300 flex justify-center items-center">
+
+                <button type="submit" class="submit-btn" id="recoveryButton">
                     <span id="recoveryButtonText">Enviar enlace de recuperación</span>
-                    <div id="recoveryLoadingSpinner" class="loading-spinner ml-2"></div>
+                    <div id="recoveryLoadingSpinner" class="loading-spinner hidden"></div>
                 </button>
             </form>
         </div>
     </div>
-    <!-- Modal para ingreso de token y nueva contraseña -->
-    <div id="tokenModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-[#05976A]">Restablecer Contraseña</h3>
-                <button id="closeTokenModal" class="text-gray-500 hover:text-gray-700">
+
+    <!-- Token Modal -->
+    <div id="tokenModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Restablecer Contraseña</h3>
+                <button id="closeTokenModal" class="close-modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <form id="tokenForm">
-                <div id="tokenMessage" class="hidden mb-4 p-3 rounded text-sm"></div>
-                <div class="mb-4">
-                    <label for="tokenInput" class="block text-gray-700 text-sm font-bold mb-2">Código de
-                        recuperación:</label>
-                    <input type="text" id="tokenInput" required
-                        class="w-full py-2 px-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#05976A]"
-                        placeholder="Ingrese el código recibido">
+                <div id="tokenMessage" class="hidden"></div>
+
+                <div class="input-group">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="text" id="tokenInput" class="form-input" placeholder="Código de recuperación" required>
                 </div>
-                <div class="mb-4">
-                    <label for="newPassword" class="block text-gray-700 text-sm font-bold mb-2">Nueva
-                        contraseña:</label>
-                    <input type="password" id="newPassword" required
-                        class="w-full py-2 px-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#05976A]"
-                        placeholder="Ingrese nueva contraseña">
+
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="newPassword" class="form-input" placeholder="Nueva contraseña" required>
                 </div>
-                <div class="mb-4">
-                    <label for="confirmNewPassword" class="block text-gray-700 text-sm font-bold mb-2">Confirmar nueva
-                        contraseña:</label>
-                    <input type="password" id="confirmNewPassword" required
-                        class="w-full py-2 px-3 border rounded focus:outline-none focus:ring-2 focus:ring-[#05976A]"
-                        placeholder="Repita la nueva contraseña">
+
+                <div class="input-group">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="confirmNewPassword" class="form-input"
+                        placeholder="Confirmar nueva contraseña" required>
                 </div>
-                <button type="submit"
-                    class="w-full bg-[#05976A] text-white font-bold py-2 px-4 rounded hover:bg-[#047A5B] transition duration-300">
+
+                <button type="submit" class="submit-btn">
                     Restablecer contraseña
                 </button>
             </form>
         </div>
     </div>
-    
-     <!-- Script de reCAPTCHA -->
-     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
     <script>
-        // Mostrar/ocultar contraseña
+        // Slider functionality
+        const authContainer = document.getElementById('authContainer');
+        const showRegisterForm = document.getElementById('showRegisterForm');
+        const showLoginForm = document.getElementById('showLoginForm');
+        const loginWelcomeBtn = document.getElementById('loginWelcomeBtn');
+        const registerWelcomeBtn = document.getElementById('registerWelcomeBtn');
+
+        function toggleForms() {
+            authContainer.classList.toggle('login-state');
+            authContainer.classList.toggle('register-state');
+        }
+
+        showRegisterForm.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleForms();
+        });
+
+        showLoginForm.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleForms();
+        });
+
+        loginWelcomeBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleForms();
+        });
+
+        registerWelcomeBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleForms();
+        });
+
+        // Toggle password visibility
         document.getElementById('togglePassword').addEventListener('click', function () {
             const passwordInput = document.getElementById('password');
-            const icon = this.querySelector('i');
+            const icon = this;
 
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -368,10 +847,9 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             }
         });
 
-        // Mostrar/ocultar contraseña en registro
         document.getElementById('toggleRegisterPassword').addEventListener('click', function () {
             const passwordInput = document.getElementById('registerPassword');
-            const icon = this.querySelector('i');
+            const icon = this;
 
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -382,69 +860,215 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             }
         });
 
-        // Cambiar entre formularios de login y registro
-        document.getElementById('showRegisterForm').addEventListener('click', function (e) {
-            e.preventDefault();
-            document.getElementById('loginFormContainer').classList.remove('form-visible');
-            document.getElementById('loginFormContainer').classList.add('form-hidden');
-
-            setTimeout(() => {
-                document.getElementById('registerFormContainer').classList.remove('form-hidden');
-                document.getElementById('registerFormContainer').classList.add('form-visible');
-            }, 50);
-        });
-
-        document.getElementById('showLoginForm').addEventListener('click', function (e) {
-            e.preventDefault();
-            document.getElementById('registerFormContainer').classList.remove('form-visible');
-            document.getElementById('registerFormContainer').classList.add('form-hidden');
-
-            setTimeout(() => {
-                document.getElementById('loginFormContainer').classList.remove('form-hidden');
-                document.getElementById('loginFormContainer').classList.add('form-visible');
-            }, 50);
-        });
-        // Token modal handling
-        const tokenModal = document.getElementById('tokenModal');
-        const closeTokenModal = document.getElementById('closeTokenModal');
-        const tokenForm = document.getElementById('tokenForm');
-
-        closeTokenModal.addEventListener('click', function () {
-            tokenModal.classList.add('hidden');
-        });
-
-        // Password recovery modal handling
+        // Modal handlers
         const passwordModal = document.getElementById('passwordModal');
-        const recoveryForm = document.getElementById('recoveryForm');
-        const recoveryMessage = document.getElementById('recoveryMessage');
-        const recoveryButtonText = document.getElementById('recoveryButtonText');
-        const recoverySpinner = document.getElementById('recoveryLoadingSpinner');
+        const tokenModal = document.getElementById('tokenModal');
 
-        document.getElementById('forgotPassword').addEventListener('click', function (e) {
-            e.preventDefault();
-            passwordModal.classList.remove('hidden');
-        });
+        // Add event listener only if the element exists
+        const forgotPasswordLink = document.getElementById('forgotPassword');
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                passwordModal.classList.add('show');
+            });
+        }
 
         document.getElementById('closeModal').addEventListener('click', function () {
-            passwordModal.classList.add('hidden');
-            recoveryForm.reset();
-            recoveryMessage.classList.add('hidden');
+            passwordModal.classList.remove('show');
+        });
+
+        document.getElementById('closeTokenModal').addEventListener('click', function () {
+            tokenModal.classList.remove('show');
+        });
+
+        // Close modals when clicking outside
+        [passwordModal, tokenModal].forEach(modal => {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+            const errorMessage = document.getElementById('loginErrorMessage');
+            const buttonText = document.getElementById('loginButtonText');
+            const spinner = document.getElementById('loginLoadingSpinner');
+
+            // Show loading state
+            buttonText.textContent = 'VERIFICANDO...';
+            spinner.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+
+            // Send to server
+            fetch('includes/login_handler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    remember: remember
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = 'dashboard.php';
+                    } else {
+                        errorMessage.textContent = data.message;
+                        errorMessage.classList.remove('hidden');
+                        buttonText.textContent = 'INGRESAR';
+                        spinner.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    errorMessage.textContent = 'Error de conexión con el servidor';
+                    errorMessage.classList.remove('hidden');
+                    buttonText.textContent = 'INGRESAR';
+                    spinner.classList.add('hidden');
+                });
+        });
+
+        // Register form submission
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const phone = document.getElementById('registerPhone').value;
+            const ficha = document.getElementById('registerFicha').value;
+            const errorMessage = document.getElementById('registerErrorMessage');
+            const successMessage = document.getElementById('registerSuccessMessage');
+            const buttonText = document.getElementById('registerButtonText');
+            const spinner = document.getElementById('registerLoadingSpinner');
+
+            // Validations
+            if (password.length < 8) {
+                errorMessage.textContent = 'La contraseña debe tener al menos 8 caracteres';
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'Las contraseñas no coinciden';
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                return;
+            }
+
+            const phoneRegex = /^\+[0-9]{11,15}$/;
+            if (!phoneRegex.test(phone)) {
+                errorMessage.textContent = 'Por favor, ingrese un número de WhatsApp válido con formato internacional (+573001234567)';
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                return;
+            }
+
+            // Validate ficha
+            if (!ficha) {
+                errorMessage.textContent = 'Por favor, ingrese el número de ficha';
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('includes/validate_ficha.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ficha: ficha })
+                });
+
+                const validationData = await response.json();
+                if (!validationData.valid) {
+                    errorMessage.textContent = 'La ficha ingresada no es válida';
+                    errorMessage.classList.remove('hidden');
+                    successMessage.classList.add('hidden');
+                    return;
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Error al validar la ficha';
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+                return;
+            }
+
+            // Show loading state
+            buttonText.textContent = 'REGISTRANDO...';
+            spinner.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            successMessage.classList.add('hidden');
+
+            // Send to server
+            fetch('includes/register_handler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    phone: phone,
+                    role: 'aprendiz',
+                    ficha: ficha
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        successMessage.textContent = '¡Registro exitoso! Redirigiendo...';
+                        successMessage.classList.remove('hidden');
+                        errorMessage.classList.add('hidden');
+
+                        // Redirect after 2 seconds
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.php';
+                        }, 2000);
+                    } else {
+                        errorMessage.textContent = data.message || 'Error al registrar el usuario';
+                        errorMessage.classList.remove('hidden');
+                        successMessage.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    errorMessage.textContent = 'Error de conexión con el servidor';
+                    errorMessage.classList.remove('hidden');
+                    successMessage.classList.add('hidden');
+                })
+                .finally(() => {
+                    buttonText.textContent = 'REGISTRARSE';
+                    spinner.classList.add('hidden');
+                });
         });
 
         // Recovery form submission
-        recoveryForm.addEventListener('submit', async function (e) {
+        document.getElementById('recoveryForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const username = document.getElementById('recoveryUsername').value;
             const phone = document.getElementById('recoveryPhone').value;
+            const recoveryMessage = document.getElementById('recoveryMessage');
+            const recoveryButtonText = document.getElementById('recoveryButtonText');
+            const recoverySpinner = document.getElementById('recoveryLoadingSpinner');
 
             // Basic phone number validation
             const phoneRegex = /^\+[0-9]{11,15}$/;
             if (!phoneRegex.test(phone)) {
                 recoveryMessage.textContent = 'Por favor, ingrese un número de WhatsApp válido con formato internacional (+573001234567)';
-                recoveryMessage.classList.remove('hidden');
-                recoveryMessage.classList.add('bg-red-100', 'text-red-700');
-                recoveryMessage.classList.remove('bg-green-100', 'text-green-700');
+                recoveryMessage.classList.remove('hidden', 'success-message');
+                recoveryMessage.classList.add('error-message');
                 return;
             }
 
@@ -472,35 +1096,33 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
 
                     // Show success message
                     recoveryMessage.textContent = 'Se ha enviado el código de recuperación a tu WhatsApp';
-                    recoveryMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-                    recoveryMessage.classList.add('bg-green-100', 'text-green-700');
+                    recoveryMessage.classList.remove('hidden', 'error-message');
+                    recoveryMessage.classList.add('success-message');
 
-                    // Close recovery modal and reset form
-                    passwordModal.classList.add('hidden');
-                    recoveryForm.reset();
-
-                    // Show token modal after a short delay
+                    // Close recovery modal and show token modal
                     setTimeout(() => {
-                        tokenModal.classList.remove('hidden');
-                    }, 1000);
+                        passwordModal.classList.remove('show');
+                        tokenModal.classList.add('show');
+                        document.getElementById('recoveryForm').reset();
+                    }, 2000);
 
                 } else {
                     recoveryMessage.textContent = data.message;
-                    recoveryMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-                    recoveryMessage.classList.add('bg-red-100', 'text-red-700');
+                    recoveryMessage.classList.remove('hidden', 'success-message');
+                    recoveryMessage.classList.add('error-message');
                 }
             } catch (error) {
                 recoveryMessage.textContent = 'Error al procesar la solicitud';
-                recoveryMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-                recoveryMessage.classList.add('bg-red-100', 'text-red-700');
+                recoveryMessage.classList.remove('hidden', 'success-message');
+                recoveryMessage.classList.add('error-message');
             } finally {
-                recoveryButtonText.textContent = 'Enviar';
+                recoveryButtonText.textContent = 'Enviar enlace de recuperación';
                 recoverySpinner.classList.add('hidden');
             }
         });
 
-        //envio del formulario
-        tokenForm.addEventListener('submit', function (e) {
+        // Token form submission
+        document.getElementById('tokenForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
             const token = document.getElementById('tokenInput').value;
@@ -511,16 +1133,16 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             // Validate passwords match
             if (newPassword !== confirmPassword) {
                 tokenMessage.textContent = 'Las contraseñas no coinciden';
-                tokenMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-                tokenMessage.classList.add('bg-red-100', 'text-red-700');
+                tokenMessage.classList.remove('hidden', 'success-message');
+                tokenMessage.classList.add('error-message');
                 return;
             }
 
             // Validate password length
             if (newPassword.length < 8) {
                 tokenMessage.textContent = 'La contraseña debe tener al menos 8 caracteres';
-                tokenMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-                tokenMessage.classList.add('bg-red-100', 'text-red-700');
+                tokenMessage.classList.remove('hidden', 'success-message');
+                tokenMessage.classList.add('error-message');
                 return;
             }
 
@@ -544,210 +1166,38 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
                 .then(data => {
                     if (data.success) {
                         tokenMessage.textContent = 'Contraseña actualizada correctamente';
-                        tokenMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-                        tokenMessage.classList.add('bg-green-100', 'text-green-700');
+                        tokenMessage.classList.remove('hidden', 'error-message');
+                        tokenMessage.classList.add('success-message');
 
                         // Close modal after 3 seconds
                         setTimeout(() => {
-                            tokenModal.classList.add('hidden');
-                            tokenForm.reset();
+                            tokenModal.classList.remove('show');
+                            document.getElementById('tokenForm').reset();
                             // Redirect to login page
                             window.location.href = 'index.php';
                         }, 3000);
                     } else {
                         tokenMessage.textContent = data.message;
-                        tokenMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-                        tokenMessage.classList.add('bg-red-100', 'text-red-700');
+                        tokenMessage.classList.remove('hidden', 'success-message');
+                        tokenMessage.classList.add('error-message');
                     }
                 })
                 .catch(error => {
                     tokenMessage.textContent = 'Error al procesar la solicitud';
-                    tokenMessage.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-                    tokenMessage.classList.add('bg-red-100', 'text-red-700');
+                    tokenMessage.classList.remove('hidden', 'success-message');
+                    tokenMessage.classList.add('error-message');
                     console.error('Error:', error);
                 });
         });
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('showTokenModal')) {
-            tokenModal.classList.remove('hidden');
-        }
-
-        // Envío de formulario de login
-        document.getElementById('loginForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const remember = document.getElementById('remember').checked;
-            const errorMessage = document.getElementById('errorMessage');
-            const buttonText = document.getElementById('buttonText');
-            const spinner = document.getElementById('loadingSpinner');
-
-            // Mostrar estado de carga
-            buttonText.textContent = 'VERIFICANDO...';
-            spinner.style.display = 'block';
-            errorMessage.classList.add('hidden');
-
-            // Enviar datos al servidor
-            fetch('includes/login_handler.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    password: password,
-                    remember: remember
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = 'dashboard.php';
-                    } else {
-                        errorMessage.textContent = data.message;
-                        errorMessage.classList.remove('hidden');
-                        buttonText.textContent = 'INGRESAR';
-                        spinner.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    errorMessage.textContent = 'Error de conexión con el servidor';
-                    errorMessage.classList.remove('hidden');
-                    buttonText.textContent = 'INGRESAR';
-                    spinner.style.display = 'none';
-                });
-        });
-
-                // Envío de formulario de registro
-                document.getElementById('registerForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const phone = document.getElementById('registerPhone').value;
-            const role = 'aprendiz'; // Siempre será aprendiz
-            const ficha = document.getElementById('registerFicha')?.value;
-            const errorMessage = document.getElementById('registerErrorMessage');
-            const successMessage = document.getElementById('registerSuccessMessage');
-            const buttonText = document.getElementById('registerButtonText');
-            const spinner = document.getElementById('registerLoadingSpinner');
-
-            // Validaciones
-            if (password.length < 8) {
-                errorMessage.textContent = 'La contraseña debe tener al menos 8 caracteres';
-                errorMessage.classList.remove('hidden');
-                successMessage.classList.add('hidden');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                errorMessage.textContent = 'Las contraseñas no coinciden';
-                errorMessage.classList.remove('hidden');
-                successMessage.classList.add('hidden');
-                return;
-            }
-
-            const phoneRegex = /^\+[0-9]{11,15}$/;
-            if (!phoneRegex.test(phone)) {
-                errorMessage.textContent = 'Por favor, ingrese un número de WhatsApp válido con formato internacional (+573001234567)';
-                errorMessage.classList.remove('hidden');
-                successMessage.classList.add('hidden');
-                return;
-            }
-
-            // Validar ficha si el rol es aprendiz
-            if (role === 'aprendiz') {
-                if (!ficha) {
-                    errorMessage.textContent = 'Por favor, ingrese el número de ficha';
-                    errorMessage.classList.remove('hidden');
-                    successMessage.classList.add('hidden');
-                    return;
-                }
-
-                try {
-                    const response = await fetch('includes/validate_ficha.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ ficha: ficha })
-                    });
-
-                    const validationData = await response.json();
-                    if (!validationData.valid) {
-                        errorMessage.textContent = 'La ficha ingresada no es válida';
-                        errorMessage.classList.remove('hidden');
-                        successMessage.classList.add('hidden');
-                        return;
-                    }
-                } catch (error) {
-                    errorMessage.textContent = 'Error al validar la ficha';
-                    errorMessage.classList.remove('hidden');
-                    successMessage.classList.add('hidden');
-                    return;
-                }
-            }
-
-            // Mostrar estado de carga
-            buttonText.textContent = 'REGISTRANDO...';
-            spinner.style.display = 'block';
-            errorMessage.classList.add('hidden');
-            successMessage.classList.add('hidden');
-
-            // Enviar datos al servidor
-            fetch('includes/register_handler.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    password: password,
-                    phone: phone,
-                    role: role,
-                    ficha: role === 'aprendiz' ? ficha : null
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        successMessage.textContent = '¡Registro exitoso! Redirigiendo...';
-                        successMessage.classList.remove('hidden');
-                        errorMessage.classList.add('hidden');
-
-                        // Redirigir después de 2 segundos
-                        setTimeout(() => {
-                            window.location.href = 'dashboard.php';
-                        }, 2000);
-                    } else {
-                        errorMessage.textContent = data.message || 'Error al registrar el usuario';
-                        errorMessage.classList.remove('hidden');
-                        successMessage.classList.add('hidden');
-                    }
-                })
-                .catch(error => {
-                    errorMessage.textContent = 'Error de conexión con el servidor';
-                    errorMessage.classList.remove('hidden');
-                    successMessage.classList.add('hidden');
-                })
-                .finally(() => {
-                    buttonText.textContent = 'REGISTRARSE';
-                    spinner.style.display = 'none';
-                });
-        });
-
-       // Recordar usuario al recargar la página
-       document.addEventListener('DOMContentLoaded', function () {
+        // Remember user functionality
+        document.addEventListener('DOMContentLoaded', function () {
             if (localStorage.getItem('rememberUser') === 'true') {
                 document.getElementById('username').value = localStorage.getItem('savedUsername') || '';
                 document.getElementById('remember').checked = true;
             }
         });
 
-        // Guardar usuario si se marca "Recordar sesión"
         document.getElementById('remember').addEventListener('change', function () {
             if (this.checked) {
                 localStorage.setItem('rememberUser', 'true');
@@ -758,19 +1208,18 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             }
         });
 
-        // Mostrar/ocultar campo de ficha según el rol seleccionado
-document.getElementById('registerRole').addEventListener('change', function() {
-    const fichaContainer = document.getElementById('fichaContainer');
-    if (this.value === 'aprendiz') {
-        fichaContainer.classList.remove('hidden');
-        document.getElementById('registerFicha').required = true;
-    } else {
-        fichaContainer.classList.add('hidden');
-        document.getElementById('registerFicha').required = false;
-    }
-});
+        // Check URL parameters for token modal
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('showTokenModal')) {
+            tokenModal.classList.add('show');
+        }
 
-
+        // Error handling for inactive users
+        if (urlParams.has('error') && urlParams.get('error') === 'inactive') {
+            const errorMessage = document.getElementById('loginErrorMessage');
+            errorMessage.textContent = 'Su cuenta ha sido desactivada. Contacte al administrador.';
+            errorMessage.classList.remove('hidden');
+        }
     </script>
 </body>
 

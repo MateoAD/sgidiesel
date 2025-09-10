@@ -302,6 +302,8 @@ function generarQR() {
 
     const qrContainer = $('qrContainer');
     qrContainer.innerHTML = '';
+    qrContainer.style.backgroundColor = 'white';
+    qrContainer.style.padding = '10px';
 
     try {
         new QRCode(qrContainer, {
@@ -326,9 +328,22 @@ function descargarQR() {
         return;
     }
 
+    // Crear un canvas temporal con fondo blanco
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width + 20;
+    tempCanvas.height = canvas.height + 20;
+    const ctx = tempCanvas.getContext('2d');
+    
+    // Rellenar con fondo blanco
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    
+    // Dibujar el QR centrado
+    ctx.drawImage(canvas, 10, 10);
+
     const nombre = $('nombreQR').value.trim() || 'codigo_qr_' + $('codigoQR').value;
     const enlace = document.createElement('a');
-    enlace.href = canvas.toDataURL('image/png');
+    enlace.href = tempCanvas.toDataURL('image/png');
     enlace.download = nombre + '.png';
     enlace.click();
 }

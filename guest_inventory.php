@@ -372,7 +372,12 @@ FROM herramientas_no_consumibles");
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         placeholder="Ingrese la cantidad a reservar">
                 </div>
-
+                <div class="space-y-1">
+    <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+    <textarea id="descripcion" name="descripcion"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+        placeholder="Ingrese una descripción del préstamo"></textarea>
+</div>
                 <div class="space-y-1">
                     <label for="fechaReserva" class="block text-sm font-medium text-gray-700">Fecha de Reserva</label>
                     <input type="date" id="fechaReserva" name="fechaReserva" required

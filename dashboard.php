@@ -177,6 +177,78 @@ require_once 'includes/auth_check.php';
         .bg-aprendices {
             background-color: #3B82F6;
         }
+
+        /* Estilos mejorados para botones de roles */
+        .role-button {
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            border-radius: 16px;
+            transform: perspective(500px);
+        }
+
+        .role-button:hover {
+            transform: perspective(500px) translateY(-5px) rotateX(3deg);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .role-button.active {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .role-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .role-button:hover::before {
+            left: 100%;
+        }
+
+        /* Indicador de número de usuarios */
+        .user-count {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Estilos para modales de tablas */
+        .table-modal {
+            max-width: 90%;
+            width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 9999;
+        }
+
+        #admin-modal, #almacenista-modal, #aprendiz-modal, #permisosModal {
+            z-index: 9998;
+        }
+        
+        #modalSystem {
+            z-index: 10000;
+        }
     </style>
 </head>
 
@@ -199,10 +271,173 @@ require_once 'includes/auth_check.php';
         </div>
     </div>
 
+    <!-- Modal para Tabla de Administradores -->
+    <div id="admin-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-2000">
+        <div class="bg-white rounded-lg shadow-xl table-modal">
+            <div class="flex justify-between items-center border-b px-5 py-4 bg-purple-50">
+                <div class="flex items-center">
+                    <i class="fas fa-user-shield text-2xl mr-3 text-purple-500"></i>
+                    <h3 class="text-lg font-semibold text-gray-800">Administradores</h3>
+                </div>
+                <button onclick="hideTableModal('admin-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <div class="relative mb-4">
+                    <input type="text" id="admin-search"
+                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Buscar administradores...">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-gray-800 text-white sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Usuario</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Teléfono</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-content" class="divide-y divide-gray-200">
+                            <!-- Contenido dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Tabla de Almacenistas -->
+    <div id="almacenista-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-2000">
+        <div class="bg-white rounded-lg shadow-xl table-modal">
+            <div class="flex justify-between items-center border-b px-5 py-4 bg-blue-50">
+                <div class="flex items-center">
+                    <i class="fas fa-boxes text-2xl mr-3 text-blue-500"></i>
+                    <h3 class="text-lg font-semibold text-gray-800">Almacenistas</h3>
+                </div>
+                <button onclick="hideTableModal('almacenista-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <div class="relative mb-4">
+                    <input type="text" id="almacenista-search"
+                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Buscar almacenistas...">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-gray-800 text-white sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Usuario</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Teléfono</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="almacenista-content" class="divide-y divide-gray-200">
+                            <!-- Contenido dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Tabla de Aprendices -->
+    <div id="aprendiz-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-2000">
+        <div class="bg-white rounded-lg shadow-xl table-modal">
+            <div class="flex justify-between items-center border-b px-5 py-4 bg-green-50">
+                <div class="flex items-center">
+                    <i class="fas fa-user-graduate text-2xl mr-3 text-green-500"></i>
+                    <h3 class="text-lg font-semibold text-gray-800">Aprendices</h3>
+                </div>
+                <button onclick="hideTableModal('aprendiz-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <div class="relative mb-4">
+                    <input type="text" id="aprendiz-search"
+                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Buscar aprendices...">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead class="bg-gray-800 text-white sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Usuario</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Teléfono</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aprendiz-content" class="divide-y divide-gray-200">
+                            <!-- Contenido dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Asignar Permisos -->
+    <div id="permisosModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-2000">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Asignar permisos</h3>
+                <button onclick="cerrarModalPermisos()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <button onclick="asignarRol('administrador')"
+                    class="w-full flex items-center p-4 bg-purple-100 hover:bg-purple-200 rounded-lg transition">
+                    <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white mr-4">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-purple-800">Hacer Administrador</h4>
+                        <p class="text-sm text-purple-600">Acceso completo al sistema</p>
+                    </div>
+                </button>
+                <button onclick="asignarRol('almacenista')"
+                    class="w-full flex items-center p-4 bg-blue-100 hover:bg-blue-200 rounded-lg transition">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-4">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-blue-800">Hacer Almacenista</h4>
+                        <p class="text-sm text-blue-600">Acceso a inventario y préstamos</p>
+                    </div>
+                </button>
+                <button onclick="asignarRol('aprendiz')"
+                    class="w-full flex items-center p-4 bg-green-100 hover:bg-green-200 rounded-lg transition">
+                    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white mr-4">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-semibold text-green-800">Hacer Aprendiz</h4>
+                        <p class="text-sm text-green-600">Acceso básico al sistema</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Header reorganizado -->
     <header class="bg-[#4A655D] text-white shadow-lg sticky top-0 z-10" style="background-color: #4A655D !important;">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-
             <!-- Logo y texto institucional -->
             <div class="flex items-center space-x-4">
                 <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto">
@@ -213,7 +448,6 @@ require_once 'includes/auth_check.php';
 
             <!-- Usuario y acciones -->
             <div class="flex items-center space-x-6">
-
                 <!-- Perfil de usuario con nombre -->
                 <div class="flex items-center bg-[#3A9171] px-4 py-2 rounded-full shadow-md">
                     <i class="fas fa-user-circle text-2xl mr-2 text-white"></i>
@@ -255,8 +489,7 @@ require_once 'includes/auth_check.php';
                             <div class="px-4 py-3 text-sm text-gray-700">Cargando...</div>
                         </div>
                         <div class="px-4 py-2 border-t border-gray-200 text-right">
-                            <a href="inventario.php" class="text-xs text-blue-600 hover:underline">Ver inventario
-                                completo</a>
+                            <a href="inventario.php" class="text-xs text-blue-600 hover:underline">Ver inventario completo</a>
                         </div>
                     </div>
                 </div>
@@ -266,7 +499,6 @@ require_once 'includes/auth_check.php';
                     class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center">
                     <i class="fas fa-sign-out-alt mr-2"></i>
                 </a>
-
             </div>
         </div>
     </header>
@@ -409,94 +641,56 @@ require_once 'includes/auth_check.php';
             <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
                 <i class="fas fa-users mr-2"></i>GESTIÓN DE USUARIOS
             </h2>
-            <div class="relative flex gap-4 items-center">
-                <input type="text" id="searchUsers"
-                    class="w-full px-4 py-2 pl-10 pr-8 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Buscar usuarios...">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
-                </div>
-                <select id="user-role-filter"
-                    class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Todos los roles</option>
-                    <option value="administrador">Administrador</option>
-                    <option value="aprendiz">Aprendiz</option>
-                    <option value="almacenista">Almacenista</option>
-                </select>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+    <!-- Botón Administrador -->
+    <button id="admin-button" onclick="showTableModal('admin-modal', 'administrador')"
+        class="role-button group text-white p-8 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
+        style="background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%); box-shadow: 0 10px 20px rgba(107, 70, 193, 0.3);">
+        <div class="relative z-10">
+            <div class="bg-white bg-opacity-20 p-5 rounded-full shadow-lg mb-6 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-user-shield text-white text-4xl"></i>
             </div>
-            <br>
-            <br>
-            <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
-                <table class="min-w-full bg-white rounded-lg overflow-hidden">
-                    <thead class="bg-gray-800 text-white sticky-header">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">ID
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                Usuario</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rol
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                Teléfono</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usuarios-content" class="divide-y divide-gray-200">
-                        <!-- Aquí se inserta el contenido dinámicamente -->
-                    </tbody>
-                </table>
-            </div>
+            <span id="admin-count" class="absolute -top-2 -right-2 bg-white text-purple-800 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-md">0</span>
+            
+            <h3 class="text-2xl font-bold mb-3">Administradores</h3>
+            <p class="text-gray-100 opacity-90 group-hover:opacity-100 transition-opacity">Gestiona los usuarios con acceso completo</p>
         </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+    </button>
 
-        <!-- MODAL ROL -->
-        <div id="permisosModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl w-96">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">Asignar permisos</h3>
-                    <button onclick="cerrarModalPermisos()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <div class="space-y-4">
-                    <button onclick="asignarRol('administrador')"
-                        class="w-full flex items-center p-4 bg-purple-100 hover:bg-purple-200 rounded-lg transition">
-                        <div
-                            class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white mr-4">
-                            <i class="fas fa-user-shield"></i>
-                        </div>
-                        <div class="text-left">
-                            <h4 class="font-semibold text-purple-800">Hacer Administrador</h4>
-                            <p class="text-sm text-purple-600">Acceso completo al sistema</p>
-                        </div>
-                    </button>
-
-                    <button onclick="asignarRol('almacenista')"
-                        class="w-full flex items-center p-4 bg-blue-100 hover:bg-blue-200 rounded-lg transition">
-                        <div
-                            class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-4">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                        <div class="text-left">
-                            <h4 class="font-semibold text-blue-800">Hacer Almacenista</h4>
-                            <p class="text-sm text-blue-600">Acceso a inventario y préstamos</p>
-                        </div>
-                    </button>
-
-                    <button onclick="asignarRol('aprendiz')"
-                        class="w-full flex items-center p-4 bg-green-100 hover:bg-green-200 rounded-lg transition">
-                        <div
-                            class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white mr-4">
-                            <i class="fas fa-user-graduate"></i>
-                        </div>
-                        <div class="text-left">
-                            <h4 class="font-semibold text-green-800">Hacer Aprendiz</h4>
-                            <p class="text-sm text-green-600">Acceso básico al sistema</p>
-                        </div>
-                    </button>
-                </div>
+    <!-- Botón Almacenista -->
+    <button id="almacenista-button" onclick="showTableModal('almacenista-modal', 'almacenista')"
+        class="role-button group text-white p-8 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
+        style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);">
+        <div class="relative z-10">
+            <div class="bg-white bg-opacity-20 p-5 rounded-full shadow-lg mb-6 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-boxes text-white text-4xl"></i>
             </div>
+            <span id="almacenista-count" class="absolute -top-2 -right-2 bg-white text-blue-800 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-md">0</span>
+            
+            <h3 class="text-2xl font-bold mb-3">Almacenistas</h3>
+            <p class="text-gray-100 opacity-90 group-hover:opacity-100 transition-opacity">Controla el acceso al inventario</p>
+        </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+    </button>
+
+    <!-- Botón Aprendiz -->
+    <button id="aprendiz-button" onclick="showTableModal('aprendiz-modal', 'aprendiz')"
+        class="role-button group text-white p-8 rounded-2xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
+        style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);">
+        <div class="relative z-10">
+            <div class="bg-white bg-opacity-20 p-5 rounded-full shadow-lg mb-6 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-user-graduate text-white text-4xl"></i>
+            </div>
+            <span id="aprendiz-count" class="absolute -top-2 -right-2 bg-white text-green-800 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-md">0</span>
+            
+            <h3 class="text-2xl font-bold mb-3">Aprendices</h3>
+            <p class="text-gray-100 opacity-90 group-hover:opacity-100 transition-opacity">Administra los usuarios en formación</p>
+        </div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+    </button>
+</div>
+
         </div>
 
         <!-- Auditoría de Préstamos -->
@@ -648,6 +842,34 @@ require_once 'includes/auth_check.php';
                 console.log('Modal cerrado');
             }
 
+            // Funciones para modales de tablas
+            function showTableModal(modalId, role) {
+                const modals = ['admin-modal', 'almacenista-modal', 'aprendiz-modal'];
+                const buttons = ['admin-button', 'almacenista-button', 'aprendiz-button'];
+                modals.forEach((id, index) => {
+                    const modal = $(id);
+                    const button = $(buttons[index]);
+                    if (id === modalId) {
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                        button.classList.add('active');
+                    } else {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                        button.classList.remove('active');
+                    }
+                });
+                cargarUsuarios(role);
+            }
+
+            function hideTableModal(modalId) {
+                const modal = $(modalId);
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                const button = $(modalId.replace('-modal', '-button'));
+                button.classList.remove('active');
+            }
+
             // Funciones de conveniencia con tiempos mínimos garantizados
             function showError(message, title = 'Error', duration = 10000) {
                 showModal('error', title, message, { duration: Math.max(duration, 10000) });
@@ -691,8 +913,13 @@ require_once 'includes/auth_check.php';
             }
 
             // Función para cargar usuarios
-            async function cargarUsuarios() {
-                const usuariosContent = $('usuarios-content');
+            async function cargarUsuarios(selectedRole = null) {
+                const adminContent = $('admin-content');
+                const almacenistaContent = $('almacenista-content');
+                const aprendizContent = $('aprendiz-content');
+                const adminCount = $('admin-count');
+                const almacenistaCount = $('almacenista-count');
+                const aprendizCount = $('aprendiz-count');
 
                 try {
                     const response = await fetch('includes/get_users_data.php');
@@ -709,83 +936,101 @@ require_once 'includes/auth_check.php';
                         throw new Error(data.message || 'Error al cargar usuarios');
                     }
 
-                    let html = '';
-                    data.users.forEach(user => {
-                        const rowColor = user.rol === 'administrador'
-                            ? 'bg-purple-50 hover:bg-purple-100'
-                            : user.rol === 'aprendiz'
-                                ? 'bg-green-50 hover:bg-green-100'
-                                : 'bg-blue-50 hover:bg-blue-100';
-                        const badgeColor = user.rol === 'administrador'
-                            ? 'bg-purple-100 text-purple-800'
-                            : user.rol === 'aprendiz'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-blue-100 text-blue-800';
+                    // Separar usuarios por rol
+                    const adminUsers = data.users.filter(user => user.rol === 'administrador');
+                    const almacenistaUsers = data.users.filter(user => user.rol === 'almacenista');
+                    const aprendizUsers = data.users.filter(user => user.rol === 'aprendiz');
 
-                        html += `
-                            <tr class="${rowColor} transition-colors duration-200">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.usuario}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeColor}">
-                                        ${user.rol}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.telefono || 'No registrado'}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-4">
-                                        ${user.rol === 'administrador' ? `
-                                            <button onclick="confirmarCambiarRol(${user.id}, 'usuario')" 
-                                                    class="text-purple-600 hover:text-purple-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-purple-100 hover:bg-purple-200">
-                                                <i class="fas fa-user-times mr-2"></i>
-                                                Revocar admin
+                    // Actualizar contadores
+                    adminCount.textContent = adminUsers.length;
+                    almacenistaCount.textContent = almacenistaUsers.length;
+                    aprendizCount.textContent = aprendizUsers.length;
+
+                    // Generar HTML para cada tabla
+                    function generateUserRows(users, role) {
+                        let html = '';
+                        users.forEach(user => {
+                            const rowColor = role === 'administrador'
+                                ? 'bg-purple-50 hover:bg-purple-100'
+                                : role === 'almacenista'
+                                    ? 'bg-blue-50 hover:bg-blue-100'
+                                    : 'bg-green-50 hover:bg-green-100';
+
+                            html += `
+                                <tr class="${rowColor} transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.usuario}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.telefono || 'No registrado'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center gap-4">
+                                            ${role === 'administrador' ? `
+                                                <button onclick="confirmarCambiarRol(${user.id}, 'aprendiz')" 
+                                                        class="text-purple-600 hover:text-purple-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-purple-100 hover:bg-purple-200">
+                                                    <i class="fas fa-user-times mr-2"></i>
+                                                    Revocar admin
+                                                </button>
+                                            ` : `
+                                                <button onclick="mostrarModalPermisos(${user.id})" 
+                                                        class="text-blue-600 hover:text-blue-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-blue-100 hover:bg-blue-200">
+                                                    <i class="fas fa-user-shield mr-2"></i>
+                                                    Dar permisos
+                                                </button>
+                                            `}
+                                            <button onclick="confirmarEliminarUsuario(${user.id})" 
+                                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md">
+                                                <i class="fas fa-user-slash"></i> Desactivar
                                             </button>
-                                        ` : `
-                                            <button onclick="mostrarModalPermisos(${user.id})" 
-                                                    class="text-blue-600 hover:text-blue-900 flex items-center mr-4 rounded-lg px-3 py-1.5 bg-blue-100 hover:bg-blue-200">
-                                                <i class="fas fa-user-shield mr-2"></i>
-                                                Dar permisos
-                                            </button>
-                                        `}
-                                        <button onclick="confirmarEliminarUsuario(${user.id})" 
-                                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md">
-                                            <i class="fas fa-user-slash"></i> Desactivar
-                                        </button>
-                                    </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        return html || `
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                    No hay usuarios con el rol ${role}
                                 </td>
                             </tr>
                         `;
+                    }
+
+                    // Actualizar solo la tabla del rol seleccionado o todas si no se especifica
+                    if (!selectedRole || selectedRole === 'administrador') {
+                        adminContent.innerHTML = generateUserRows(adminUsers, 'administrador');
+                    }
+                    if (!selectedRole || selectedRole === 'almacenista') {
+                        almacenistaContent.innerHTML = generateUserRows(almacenistaUsers, 'almacenista');
+                    }
+                    if (!selectedRole || selectedRole === 'aprendiz') {
+                        aprendizContent.innerHTML = generateUserRows(aprendizUsers, 'aprendiz');
+                    }
+
+                    // Aplicar filtro inicial si hay búsqueda activa
+                    filterUsers('admin-search');
+                    filterUsers('almacenista-search');
+                    filterUsers('aprendiz-search');
+
+                    // Configurar event listeners para los campos de búsqueda
+                    ['admin-search', 'almacenista-search', 'aprendiz-search', 'searchUsers'].forEach(searchId => {
+                        const searchInput = $(searchId);
+                        if (searchInput) {
+                            searchInput.removeEventListener('input', () => filterUsers(searchId));
+                            searchInput.addEventListener('input', () => filterUsers(searchId));
+                        }
                     });
-
-                    usuariosContent.innerHTML = html || `
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                No hay usuarios registrados
-                            </td>
-                        </tr>
-                    `;
-
-                    const searchInput = $('searchUsers');
-                    const roleFilter = $('user-role-filter');
-                    if (searchInput) {
-                        searchInput.removeEventListener('input', filterUsers);
-                        searchInput.addEventListener('input', filterUsers);
-                    }
-                    if (roleFilter) {
-                        roleFilter.removeEventListener('change', filterUsers);
-                        roleFilter.addEventListener('change', filterUsers);
-                    }
 
                 } catch (error) {
                     console.error('Error al cargar usuarios:', error);
                     showError(`Error al cargar los usuarios: ${error.message}`, 'Error', 10000);
-                    usuariosContent.innerHTML = `
-                        <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-red-500">
-                                Error al cargar los usuarios: ${error.message}
-                            </td>
-                        </tr>
-                    `;
+                    [adminContent, almacenistaContent, aprendizContent].forEach(content => {
+                        content.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-red-500">
+                                    Error al cargar los usuarios: ${error.message}
+                                </td>
+                            </tr>
+                        `;
+                    });
                 }
             }
 
@@ -794,11 +1039,13 @@ require_once 'includes/auth_check.php';
 
             function mostrarModalPermisos(userId) {
                 usuarioSeleccionadoId = userId;
-                $('permisosModal').style.display = 'flex';
+                $('permisosModal').classList.remove('hidden');
+                $('permisosModal').classList.add('flex');
             }
 
             function cerrarModalPermisos() {
-                $('permisosModal').style.display = 'none';
+                $('permisosModal').classList.add('hidden');
+                $('permisosModal').classList.remove('flex');
             }
 
             function asignarRol(rol) {
@@ -806,17 +1053,42 @@ require_once 'includes/auth_check.php';
                 confirmarCambiarRol(usuarioSeleccionadoId, rol);
             }
 
-            function filterUsers() {
-                const searchInput = $('searchUsers');
-                const filter = searchInput.value.toLowerCase();
-                const roleFilter = $('user-role-filter').value;
-                const rows = $$('#usuarios-content tr');
+            function filterUsers(searchId) {
+                const searchInput = $(searchId);
+                if (!searchInput) return;
 
-                rows.forEach(row => {
-                    const textContent = row.textContent.toLowerCase();
-                    const matchesText = textContent.includes(filter);
-                    const matchesRole = !roleFilter || textContent.includes(roleFilter.toLowerCase());
-                    row.style.display = (matchesText && matchesRole) ? '' : 'none';
+                const filter = searchInput.value.toLowerCase();
+                let tableId;
+
+                switch (searchId) {
+                    case 'admin-search':
+                        tableId = 'admin-content';
+                        break;
+                    case 'almacenista-search':
+                        tableId = 'almacenista-content';
+                        break;
+                    case 'aprendiz-search':
+                        tableId = 'aprendiz-content';
+                        break;
+                    case 'searchUsers':
+                        tableId = null; // Aplica a todas las tablas abiertas
+                        break;
+                    default:
+                        return;
+                }
+
+                const tables = tableId ? [tableId] : ['admin-content', 'almacenista-content', 'aprendiz-content'];
+
+                tables.forEach(id => {
+                    const modal = $(id.replace('-content', '-modal'));
+                    if (!modal.classList.contains('hidden')) {
+                        const rows = $$(`#${id} tr`);
+                        rows.forEach(row => {
+                            const textContent = row.textContent.toLowerCase();
+                            const matchesText = textContent.includes(filter);
+                            row.style.display = matchesText ? '' : 'none';
+                        });
+                    }
                 });
             }
 
@@ -974,7 +1246,7 @@ require_once 'includes/auth_check.php';
                             'eliminar': { icon: 'fa-trash-alt', bgColor: 'bg-red-50 hover:bg-red-100', textColor: 'text-red-800', borderColor: 'border-red-200', text: 'Eliminación' },
                             'prestamo': { icon: 'fa-hand-holding', bgColor: 'bg-indigo-50 hover:bg-indigo-100', textColor: 'text-indigo-800', borderColor: 'border-indigo-200', text: 'Préstamo' },
                             'devolucion': { icon: 'fa-undo', bgColor: 'bg-yellow-50 hover:bg-yellow-100', textColor: 'text-yellow-800', borderColor: 'border-yellow-200', text: 'Devolución' },
-                            'default': { icon: 'fa-info-circle', bgColor: 'bg-gray-50 hover:bg-gray-100', textColor: 'text-gray-800', borderColor: 'border-gray-200', text: 'Acción' }
+                            'default': { icon: 'fa-info-circle', bgColor: 'bg-grey-50 hover:bg-grey-100', textColor: 'text-grey-800', borderColor: 'border-grey-200', text: 'Acción' }
                         };
 
                         const config = actionConfig[audit.accion] || actionConfig.default;
@@ -1186,6 +1458,8 @@ require_once 'includes/auth_check.php';
                             if (!modal.classList.contains('hidden')) {
                                 if (modal.id === 'permisosModal') {
                                     cerrarModalPermisos();
+                                } else if (modal.id.includes('-modal')) {
+                                    hideTableModal(modal.id);
                                 } else {
                                     hideModal();
                                 }
@@ -1200,6 +1474,8 @@ require_once 'includes/auth_check.php';
                         if (e.target === this && (!this.timeoutId || this.id !== 'modalSystem')) {
                             if (this.id === 'permisosModal') {
                                 cerrarModalPermisos();
+                            } else if (this.id.includes('-modal')) {
+                                hideTableModal(this.id);
                             } else {
                                 hideModal();
                             }

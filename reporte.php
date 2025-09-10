@@ -90,28 +90,35 @@ try {
     $historialPrestamos = $stmtHistorial->fetchAll(PDO::FETCH_ASSOC);
 
     // Consulta para obtener aprendices con herramientas NO CONSUMIBLES pendientes
-    $queryPendientes = "SELECT 
-                      a.id, 
-                      CONCAT(
-                          UPPER(SUBSTRING(a.nombre, 1, 1)),
-                          LOWER(SUBSTRING(a.nombre, 2))
-                      ) AS nombre, 
-                      COUNT(p.id) AS prestamos_pendientes,
-                      GROUP_CONCAT(
-                          CONCAT(
-                              CONCAT(
-                                  UPPER(SUBSTRING(hnc.nombre, 1, 1)),
-                                  LOWER(SUBSTRING(hnc.nombre, 2))
-                              ), 
-                              ' (Cantidad: ', p.cantidad, ')'
-                          ) SEPARATOR ', '
-                      ) AS herramientas_pendientes
-                    FROM aprendices a
-                    JOIN prestamos p ON a.id = p.id_aprendiz
-                    JOIN herramientas_no_consumibles hnc ON (p.herramienta_id = hnc.id AND p.herramienta_tipo = 'no_consumible')
-                    WHERE p.estado = 'prestado'
-                    GROUP BY a.id
-                    HAVING COUNT(p.id) > 0";
+  $queryPendientes = "SELECT 
+    a.id, 
+    CONCAT(
+        UPPER(SUBSTRING(a.nombre, 1, 1)),
+        LOWER(SUBSTRING(a.nombre, 2))
+    ) AS nombre, 
+    COUNT(p.id) AS prestamos_pendientes,
+    GROUP_CONCAT(
+        CONCAT(
+            CASE 
+                WHEN p.herramienta_tipo = 'consumible' THEN hc.nombre
+                ELSE hnc.nombre
+            END,
+            ' (cantidad: ', p.cantidad, ')')
+        SEPARATOR ', '
+    ) as herramientas_pendientes
+FROM aprendices a
+LEFT JOIN prestamos p ON a.id = p.id_aprendiz
+LEFT JOIN herramientas_consumibles hc ON (p.herramienta_id = hc.id AND p.herramienta_tipo = 'consumible')
+LEFT JOIN herramientas_no_consumibles hnc ON (p.herramienta_id = hnc.id AND p.herramienta_tipo = 'no_consumible')
+WHERE p.estado = 'prestado'
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM reportes r 
+        WHERE r.id_aprendiz = a.id 
+        AND r.resuelto = 0
+    )
+GROUP BY a.id, a.nombre
+HAVING prestamos_pendientes > 0";
 
     $stmtPendientes = $db->prepare($queryPendientes);
     $stmtPendientes->execute();
@@ -240,15 +247,11 @@ try {
 
                 // Insertar nuevos reportes para cada aprendiz con pendientes
                 foreach ($aprendicesPendientes as $aprendiz) {
-                    // Verificar si ya existe un reporte no resuelto para este aprendiz en los últimos 3 días
-                    $stmtCheck = $db->prepare("
-                        SELECT COUNT(*) 
-                        FROM reportes 
-                        WHERE id_aprendiz = ? 
-                        AND resuelto = 0
-                        AND fecha_reporte >= DATE_SUB(NOW(), INTERVAL 3 DAY)");
-                    $stmtCheck->execute([$aprendiz['id']]);
-                    $existeReporte = $stmtCheck->fetchColumn();
+               $stmtCheck = $db->prepare("SELECT COUNT(*) FROM reportes 
+    WHERE id_aprendiz = ? 
+    AND resuelto = 0");
+$stmtCheck->execute([$aprendiz['id']]);
+$existeReporte = $stmtCheck->fetchColumn();
 
                     if (!$existeReporte) {
                         $stmtInsert = $db->prepare("
@@ -407,6 +410,7 @@ $queryReservas = "SELECT
    r.id, 
    r.herramienta_id, 
    r.tipo_herramienta, 
+   r.descripcion,
    (
        SELECT GROUP_CONCAT(
            CONCAT(
@@ -452,7 +456,7 @@ if (isset($_POST['rechazar_reserva'])) {
             $stmtDelete = $db->prepare("DELETE FROM reservas_herramientas WHERE id = ?");
             $stmtDelete->execute([$idReserva]);
 
-            // Opcional: Registrar en auditorías
+            //Registrar en auditorías
             $stmtAudit = $db->prepare("INSERT INTO auditorias (usuario_id, accion, tabla_afectada, registro_id, detalles, fecha_accion) VALUES (?, ?, ?, ?, ?, NOW())");
             $stmtAudit->execute([
                 $userId,
@@ -785,26 +789,27 @@ if (isset($_POST['rechazar_reserva'])) {
                     </div>
                 <?php else: ?>
                     <table class="min-w-full bg-white rounded-lg overflow-hidden">
-                        <thead class="bg-gray-800 text-white sticky top-0 z-10">
-                            <tr>
-                                <th class="px-6 py-3 text-left">Aprendiz</th>
-                                <th class="px-6 py-3 text-left">Herramienta</th>
-                                <th class="px-6 py-3 text-left">Cantidad</th>
-                                <th class="px-6 py-3 text-left">Fecha Reserva</th>
-                                <th class="px-6 py-3 text-left">Acciones</th>
-                            </tr>
-                        </thead>
+                      <thead class="bg-gray-800 text-white sticky top-0 z-10">
+    <tr>
+        <th class="px-6 py-3 text-left">Aprendiz</th>
+        <th class="px-6 py-3 text-left">Herramienta</th>
+        <th class="px-6 py-3 text-left">Cantidad</th>
+        <th class="px-6 py-3 text-left">Descripción</th>
+        <th class="px-6 py-3 text-left">Fecha Reserva</th>
+        <th class="px-6 py-3 text-left">Acciones</th>
+    </tr>
+</thead>
                         <tbody id="toolsTableBody" class="divide-y divide-gray-200">
-                            <?php foreach ($reservasPendientes as $reserva): ?>
-                                <tr class="border-b hover:bg-blue-50">
-                                    <td class="px-6 py-4">
-                                        <?= htmlspecialchars($reserva['nombre_aprendiz']) ?>
-                                        <div class="text-sm text-gray-500">Ficha: <?= htmlspecialchars($reserva['ficha']) ?>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4"><?= htmlspecialchars($reserva['nombre_herramienta']) ?></td>
-                                    <td class="px-6 py-4"><?= htmlspecialchars($reserva['cantidad']) ?></td>
-                                    <td class="px-6 py-4"><?= htmlspecialchars($reserva['fecha_reserva']) ?></td>
+    <?php foreach ($reservasPendientes as $reserva): ?>
+        <tr class="border-b hover:bg-blue-50">
+            <td class="px-6 py-4">
+                <?= htmlspecialchars($reserva['nombre_aprendiz']) ?>
+                <div class="text-sm text-gray-500">Ficha: <?= htmlspecialchars($reserva['ficha']) ?></div>
+            </td>
+            <td class="px-6 py-4"><?= htmlspecialchars($reserva['nombre_herramienta']) ?></td>
+            <td class="px-6 py-4"><?= htmlspecialchars($reserva['cantidad']) ?></td>
+            <td class="px-6 py-4"><?= htmlspecialchars($reserva['descripcion']) ?></td>
+            <td class="px-6 py-4"><?= htmlspecialchars($reserva['fecha_reserva']) ?></td>
                                     <td class="px-6 py-4">
                                         <form method="post" class="inline" onsubmit="return procesarReserva(event, this, <?= $reserva['id'] ?>, '<?= $reserva['tipo_herramienta'] ?>');">
                                             <input type="hidden" name="reserva_id" value="<?= $reserva['id'] ?>">
@@ -815,12 +820,12 @@ if (isset($_POST['rechazar_reserva'])) {
                                             <div class="flex items-center space-x-2">
                                                 <button type="submit" name="aceptar_reserva"
                                                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center">
-                                                    <i class="fas fa-check-circle mr-2"></i> Aceptar
+                                                    <i class="fas fa-check-circle mr-2"></i> 
                                                 </button>
                                                 <button type="submit" name="rechazar_reserva"
                                                     class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center"
                                                     onclick="return confirmarRechazoReserva(<?= $reserva['id'] ?>)">
-                                                    <i class="fas fa-times-circle mr-2"></i> Rechazar
+                                                    <i class="fas fa-times-circle mr-2"></i> 
                                                 </button>
                                             </div>
                                         </form>
@@ -1584,35 +1589,34 @@ if (isset($_POST['rechazar_reserva'])) {
             });
 
             document.getElementById('buscar-historial').addEventListener('input', function () {
-                const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('#tabla-historial tbody tr');
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#tabla-historial tbody tr');
 
-                rows.forEach(row => {
-                    const text = row.text
-                                        Content.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? '' : 'none';
-                });
-            });
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
 
             // Filtros para el historial
-            function aplicarFiltros() {
-                const tipoFiltro = document.getElementById('filtro-tipo').value;
-                const estadoFiltro = document.getElementById('filtro-estado').value;
-                const searchTerm = document.getElementById('buscar-historial').value.toLowerCase();
-                const rows = document.querySelectorAll('#tabla-historial tbody tr');
+           function aplicarFiltros() {
+    const tipoFiltro = document.getElementById('filtro-tipo').value;
+    const estadoFiltro = document.getElementById('filtro-estado').value;
+    const searchTerm = document.getElementById('buscar-historial').value.toLowerCase();
+    const rows = document.querySelectorAll('#tabla-historial tbody tr');
 
-                rows.forEach(row => {
-                    const tipoHerramienta = row.querySelector('td:nth-child(3) span').textContent.toLowerCase();
-                    const estado = row.querySelector('td:nth-child(5) span').dataset.estado.toLowerCase();
-                    const text = row.textContent.toLowerCase();
+    rows.forEach(row => {
+        const tipoHerramienta = row.querySelector('td:nth-child(3) span').textContent.toLowerCase().trim();
+        const estado = row.querySelector('td:nth-child(5) span').dataset.estado.toLowerCase();
+        const text = row.textContent.toLowerCase();
 
-                    const cumpleBusqueda = text.includes(searchTerm);
-                    const cumpleTipo = tipoFiltro === 'todos' || tipoHerramienta === tipoFiltro;
-                    const cumpleEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
+        const cumpleBusqueda = text.includes(searchTerm);
+        const cumpleTipo = tipoFiltro === 'todos' || tipoHerramienta.includes(tipoFiltro);
+        const cumpleEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
 
-                    row.style.display = cumpleBusqueda && cumpleTipo && cumpleEstado ? '' : 'none';
-                });
-            }
+        row.style.display = cumpleBusqueda && cumpleTipo && cumpleEstado ? '' : 'none';
+    });
+}
 
             // Event listeners para los filtros
             document.getElementById('filtro-tipo').addEventListener('change', aplicarFiltros);

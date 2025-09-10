@@ -41,17 +41,18 @@ try {
     
     // Insertar la reserva con el nombre del aprendiz
     $stmt = $db->prepare("INSERT INTO reservas_herramientas 
-                          (herramienta_id, tipo_herramienta, nombre_aprendiz, ficha, cantidad, fecha_reserva, estado)
-                          VALUES (?, ?, ?, ?, ?, ?, 'pendiente')");
-    
-    $stmt->execute([
-        $_POST['herramientaId'],
-        $_POST['tipoHerramienta'],
-        $nombre_aprendiz,
-        $_POST['ficha'],
-        $_POST['cantidad'],
-        $_POST['fechaReserva']
-    ]);
+                      (herramienta_id, tipo_herramienta, nombre_aprendiz, ficha, cantidad, fecha_reserva, estado, descripcion)
+                      VALUES (?, ?, ?, ?, ?, ?, 'pendiente', ?)");
+
+$stmt->execute([
+    $_POST['herramientaId'],
+    $_POST['tipoHerramienta'],
+    $nombre_aprendiz,
+    $_POST['ficha'],
+    $_POST['cantidad'],
+    $_POST['fechaReserva'],
+    $_POST['descripcion']
+]);
     
     $response['success'] = true;
     $response['message'] = 'Reserva creada exitosamente';
