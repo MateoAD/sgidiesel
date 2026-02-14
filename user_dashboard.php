@@ -66,26 +66,26 @@ try {
 
 <body class="bg-gray-50 min-h-screen">
     <header class="bg-[#4A655D] text-white shadow-lg sticky top-0 z-10">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="container mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
 
             <!-- Logo y título -->
-            <div class="flex items-center space-x-4">
-                <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto">
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <img src="./img/logoSena.png" alt="SENA Logo" class="h-12 sm:h-14 md:h-16 w-auto">
 
-                <div class="border-l-2 border-white pl-4">
-                    <h1 class="text-2xl font-bold">Panel de Usuario</h1>
-                    <p class="text-sm text-gray-200">Taller Diesel - SENA</p>
+                <div class="border-l-2 border-white pl-3 sm:pl-4 min-w-0">
+                    <h1 class="text-base sm:text-xl md:text-2xl font-bold leading-tight">Panel de Almacenista</h1>
+                    <p class="text-xs sm:text-sm text-gray-200">Taller Diesel - SENA</p>
                 </div>
             </div>
 
 
             <!-- Usuario y acciones -->
-            <div class="flex items-center space-x-6">
+            <div class="flex items-center w-full md:w-auto gap-2 sm:gap-3 md:gap-6 justify-between md:justify-end">
 
                 <!-- Perfil de usuario con nombre -->
-                <div class="flex items-center bg-[#3A9171] px-4 py-2 rounded-full shadow-md">
-                    <i class="fas fa-user-circle text-2xl mr-2 text-white"></i>
-                    <span class="font-medium text-white whitespace-nowrap">
+                <div class="flex items-center bg-[#3A9171] px-3 sm:px-4 py-2 rounded-full shadow-md min-w-0 flex-1 md:flex-none">
+                    <i class="fas fa-user-circle text-xl sm:text-2xl mr-2 text-white"></i>
+                    <span class="font-medium text-white whitespace-nowrap truncate max-w-[110px] sm:max-w-[180px] md:max-w-none">
                         <?php
                         require_once 'includes/database.php';
                         $userId = $_SESSION['user_id'];
@@ -96,7 +96,7 @@ try {
                         ?>
                     </span>
                     <a href="perfil.php"
-                        class="ml-2 bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded-full transition-all"
+                        class="ml-2 bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded-full transition-all flex-shrink-0"
                         title="Mi Perfil">
                         <i class="fas fa-cog text-white"></i>
                     </a>
@@ -104,8 +104,8 @@ try {
 
                 <!-- Botón de cerrar sesión -->
                 <a href="logout.php"
-                    class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Salir
+                    class="bg-red-500 hover:bg-red-600 px-3 sm:px-4 py-2 rounded-lg shadow-md transition duration-200 flex items-center flex-shrink-0">
+                    <i class="fas fa-sign-out-alt sm:mr-2"></i><span class="hidden sm:inline">Salir</span>
                 </a>
             </div>
 
@@ -186,6 +186,11 @@ try {
             </div>
         </div>
     </main>
+    <footer class="bg-[#2D3A36] text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 
 </html>

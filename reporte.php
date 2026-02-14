@@ -657,7 +657,7 @@ if (isset($_POST['rechazar_reserva'])) {
         <!-- Sección de Préstamos Activos (No Consumibles) -->
         <div
             class="polymorphic-container bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-2xl shadow-lg mb-8 transition-all duration-500 hover:shadow-xl">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">
                 <i class="fas fa-toolbox mr-2"></i>Préstamos Activos
             </h2>
 
@@ -781,7 +781,7 @@ if (isset($_POST['rechazar_reserva'])) {
         <!-- Sección de Reservas Pendientes -->
         <div class="bg-blue-50 rounded-lg shadow-lg p-6 mb-8">
             <h2 class="text-2xl font-bold mb-4"><i class="fas fa-clock mr-2"></i>Reservas Pendientes</h2>
-            <div class="table-container">
+            <div class="table-container overflow-x-auto">
                 <?php if (empty($reservasPendientes)): ?>
                     <div class="text-center py-8">
                         <h3 class="mt-2 text-lg font-medium text-gray-900">No hay reservas pendientes</h3>
@@ -840,39 +840,39 @@ if (isset($_POST['rechazar_reserva'])) {
 
         <!-- Sección de Historial Completo -->
         <div
-            class="polymorphic-container bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-2xl shadow-lg mb-8 transition-all duration-500 hover:shadow-xl">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            class="polymorphic-container bg-gradient-to-r from-purple-50 to-blue-50 p-4 sm:p-6 rounded-2xl shadow-lg mb-8 transition-all duration-500 hover:shadow-xl">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-6">
                 <i class="fas fa-history mr-2"></i> Historial Completo de Préstamos
             </h2>
 
             <!-- Buscador -->
-            <div class="mb-6 flex flex-wrap gap-4 items-center">
+            <div class="mb-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
                 <input type="text" id="buscar-historial" placeholder="Buscar en historial..."
-                    class="px-4 py-2 border rounded-lg w-full max-w-md">
+                    class="px-4 py-2 border rounded-lg w-full md:max-w-md">
 
                 <!-- Filtros adicionales -->
-                <div class="flex gap-4">
-                    <select id="filtro-tipo" class="px-4 py-2 border rounded-lg bg-white">
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full md:w-auto">
+                    <select id="filtro-tipo" class="px-4 py-2 border rounded-lg bg-white w-full sm:w-auto">
                         <option value="todos">Todos los tipos</option>
                         <option value="consumible">Consumibles</option>
                         <option value="no_consumible">No Consumibles</option>
                     </select>
 
-                    <select id="filtro-estado" class="px-4 py-2 border rounded-lg bg-white">
+                    <select id="filtro-estado" class="px-4 py-2 border rounded-lg bg-white w-full sm:w-auto">
                         <option value="todos">Todos los estados</option>
                         <option value="devuelto">Devueltos</option>
                         <option value="prestado">No Devueltos</option>
                         <option value="consumida">Consumidos</option>
                     </select>
 
-                    <button id="reset-filtros" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700">
+                    <button id="reset-filtros" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 w-full sm:w-auto whitespace-nowrap">
                         Reiniciar filtros
                     </button>
                 </div>
             </div>
 
             <!-- Tabla de historial -->
-            <div class="table-container">
+            <div class="table-container overflow-x-auto">
                 <table id="tabla-historial" class="min-w-full bg-white rounded-lg overflow-hidden">
                     <thead class="bg-gray-800 text-white sticky-header">
                         <tr>
@@ -956,35 +956,35 @@ if (isset($_POST['rechazar_reserva'])) {
         </div>
 
         <!-- Nueva sección de Estadísticas y Gráficos -->
-        <div
+        <div id="stats-section"
             class="polymorphic-container bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-2xl shadow-lg mb-8 transition-all duration-500 hover:shadow-xl">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Estadísticas y Gráficos</h2>
 
             <!-- Selector de período -->
-            <div class="mb-6 flex flex-wrap items-center">
+            <div class="mb-6 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center" id="periodo-selector">
                 <span class="mr-4 font-medium">Período:</span>
-                <div class="flex space-x-2">
-                    <a href="?periodo=diario"
-                        class="px-4 py-2 rounded-lg <?= $periodo === 'diario' ? 'bg-[#2D3A36] text-white' : 'bg-gray-200 hover:bg-gray-300' ?>">
+                <div class="flex flex-wrap gap-2">
+                    <a href="?periodo=diario" data-periodo="diario"
+                        class="periodo-link px-4 py-2 rounded-lg border font-medium transition-colors duration-200 <?= $periodo === 'diario' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200' ?>">
                         Diario
                     </a>
-                    <a href="?periodo=semanal"
-                        class="px-4 py-2 rounded-lg <?= $periodo === 'semanal' ? 'bg-[#2D3A36] text-white' : 'bg-gray-200 hover:bg-gray-300' ?>">
+                    <a href="?periodo=semanal" data-periodo="semanal"
+                        class="periodo-link px-4 py-2 rounded-lg border font-medium transition-colors duration-200 <?= $periodo === 'semanal' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200' ?>">
                         Semanal
                     </a>
-                    <a href="?periodo=mensual"
-                        class="px-4 py-2 rounded-lg <?= $periodo === 'mensual' ? 'bg-[#2D3A36] text-white' : 'bg-gray-200 hover:bg-gray-300' ?>">
+                    <a href="?periodo=mensual" data-periodo="mensual"
+                        class="periodo-link px-4 py-2 rounded-lg border font-medium transition-colors duration-200 <?= $periodo === 'mensual' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200' ?>">
                         Mensual
                     </a>
-                    <a href="?periodo=anual"
-                        class="px-4 py-2 rounded-lg <?= $periodo === 'anual' ? 'bg-[#2D3A36] text-white' : 'bg-gray-200 hover:bg-gray-300' ?>">
+                    <a href="?periodo=anual" data-periodo="anual"
+                        class="periodo-link px-4 py-2 rounded-lg border font-medium transition-colors duration-200 <?= $periodo === 'anual' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200' ?>">
                         Anual
                     </a>
                 </div>
 
                 <!-- Botón para generar reporte PDF -->
                 <a href="generar_reporte_estadistico.php?periodo=<?= $periodo ?>" target="_blank"
-                    class="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    class="w-full md:w-auto md:ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
                     <i class="fas fa-file-pdf mr-2"></i> Generar PDF
                 </a>
             </div>
@@ -1140,6 +1140,11 @@ if (isset($_POST['rechazar_reserva'])) {
                     </div>
                 </div>
             </div>
+            <script type="application/json" id="stats-data-json"><?= json_encode([
+                    'noConsumibles' => $datosHerramientasNoConsumibles,
+                    'consumibles' => $datosHerramientasConsumibles,
+                    'aprendices' => $datosAprendices
+                ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
         </div>
 
         <!-- Modal para reporte de pendientes -->
@@ -1578,6 +1583,200 @@ if (isset($_POST['rechazar_reserva'])) {
             }
 
             // Funcionalidad para búsqueda en tablas
+            let dynamicStatsCharts = [];
+            let periodFetchController = null;
+
+            function destroyDynamicStatsCharts() {
+                dynamicStatsCharts.forEach(chart => chart.destroy());
+                dynamicStatsCharts = [];
+            }
+
+            function getStatsSectionData(section) {
+                const dataNode = section.querySelector('#stats-data-json');
+                if (!dataNode) return null;
+
+                try {
+                    return JSON.parse(dataNode.textContent);
+                } catch (error) {
+                    console.error('No se pudo parsear stats-data-json:', error);
+                    return null;
+                }
+            }
+
+            function renderBarChart(canvasId, labels, datasets) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas || !Array.isArray(labels) || labels.length === 0) return;
+
+                const chart = new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            }
+                        }
+                    }
+                });
+
+                dynamicStatsCharts.push(chart);
+            }
+
+            function setStatsTabActive(button) {
+                const statsSection = button.closest('#stats-section');
+                if (!statsSection) return;
+
+                statsSection.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                statsSection.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                button.classList.add('active');
+                const targetTab = statsSection.querySelector(`#${button.dataset.tab}`);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                }
+            }
+
+            function renderStatsAfterPeriodChange(statsSection, preferredTabId = null) {
+                const statsData = getStatsSectionData(statsSection);
+                if (!statsData) return;
+
+                destroyDynamicStatsCharts();
+
+                renderBarChart('chartNoConsumibles', statsData.noConsumibles?.labels || [], [
+                    {
+                        label: 'Total Prestamos',
+                        data: statsData.noConsumibles?.prestamos || [],
+                        backgroundColor: colors.primary,
+                        borderColor: colors.primary,
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Total Unidades',
+                        data: statsData.noConsumibles?.unidades || [],
+                        backgroundColor: colors.secondary,
+                        borderColor: colors.secondary,
+                        borderWidth: 1
+                    }
+                ]);
+
+                renderBarChart('chartConsumibles', statsData.consumibles?.labels || [], [
+                    {
+                        label: 'Total Solicitudes',
+                        data: statsData.consumibles?.prestamos || [],
+                        backgroundColor: colors.tertiary,
+                        borderColor: colors.tertiary,
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Total Unidades',
+                        data: statsData.consumibles?.unidades || [],
+                        backgroundColor: colors.quaternary,
+                        borderColor: colors.quaternary,
+                        borderWidth: 1
+                    }
+                ]);
+
+                renderBarChart('chartAprendices', statsData.aprendices?.labels || [], [
+                    {
+                        label: 'Total Prestamos',
+                        data: statsData.aprendices?.prestamos || [],
+                        backgroundColor: colors.secondary,
+                        borderColor: colors.secondary,
+                        borderWidth: 1
+                    }
+                ]);
+
+                if (preferredTabId) {
+                    const preferredButton = statsSection.querySelector(`.tab-button[data-tab="${preferredTabId}"]`);
+                    if (preferredButton) {
+                        setStatsTabActive(preferredButton);
+                    }
+                }
+            }
+
+            async function actualizarTemporalidad(url, pushState = true) {
+                const currentStatsSection = document.getElementById('stats-section');
+                if (!currentStatsSection) return;
+
+                const activeTabId = currentStatsSection.querySelector('.tab-button.active')?.dataset.tab || null;
+                const currentScrollY = window.scrollY;
+
+                if (periodFetchController) {
+                    periodFetchController.abort();
+                }
+                periodFetchController = new AbortController();
+
+                currentStatsSection.classList.add('opacity-60', 'pointer-events-none');
+
+                try {
+                    const response = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        signal: periodFetchController.signal
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('No se pudo actualizar la temporalidad.');
+                    }
+
+                    const html = await response.text();
+                    const parsedDoc = new DOMParser().parseFromString(html, 'text/html');
+                    const newStatsSection = parsedDoc.getElementById('stats-section');
+
+                    if (!newStatsSection) {
+                        throw new Error('No se encontro la seccion de estadisticas en la respuesta.');
+                    }
+
+                    currentStatsSection.replaceWith(newStatsSection);
+                    renderStatsAfterPeriodChange(newStatsSection, activeTabId);
+
+                    if (pushState) {
+                        const nextUrl = new URL(url, window.location.origin);
+                        history.pushState(
+                            { periodUrl: `${nextUrl.pathname}${nextUrl.search}` },
+                            '',
+                            `${nextUrl.pathname}${nextUrl.search}`
+                        );
+                    }
+
+                    window.scrollTo({ top: currentScrollY, behavior: 'auto' });
+                } catch (error) {
+                    if (error.name === 'AbortError') return;
+                    console.error(error);
+                    window.location.href = url;
+                } finally {
+                    const statsSection = document.getElementById('stats-section');
+                    if (statsSection) {
+                        statsSection.classList.remove('opacity-60', 'pointer-events-none');
+                    }
+                }
+            }
+
+            document.addEventListener('click', function (event) {
+                const periodLink = event.target.closest('#stats-section .periodo-link');
+                if (periodLink) {
+                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    actualizarTemporalidad(periodLink.href, true);
+                    return;
+                }
+
+                const tabButton = event.target.closest('#stats-section .tab-button');
+                if (tabButton) {
+                    setStatsTabActive(tabButton);
+                }
+            });
+
+            window.addEventListener('popstate', function () {
+                const popstateUrl = `${window.location.pathname}${window.location.search}`;
+                actualizarTemporalidad(popstateUrl, false);
+            });
+
             document.getElementById('buscar-activos').addEventListener('input', function () {
                 const searchTerm = this.value.toLowerCase();
                 const rows = document.querySelectorAll('#tabla-activos tbody tr');
@@ -1611,7 +1810,7 @@ if (isset($_POST['rechazar_reserva'])) {
         const text = row.textContent.toLowerCase();
 
         const cumpleBusqueda = text.includes(searchTerm);
-        const cumpleTipo = tipoFiltro === 'todos' || tipoHerramienta.includes(tipoFiltro);
+        const cumpleTipo = tipoFiltro === 'todos' || tipoHerramienta === tipoFiltro;
         const cumpleEstado = estadoFiltro === 'todos' || estado === estadoFiltro;
 
         row.style.display = cumpleBusqueda && cumpleTipo && cumpleEstado ? '' : 'none';
@@ -1634,20 +1833,6 @@ if (isset($_POST['rechazar_reserva'])) {
                 });
             });
 
-            // Manejo de pestañas para gráficos
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', function () {
-                    // Remover clase activa de todas las pestañas y contenidos
-                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-                    // Activar la pestaña y contenido seleccionados
-                    this.classList.add('active');
-                    const tabId = this.dataset.tab;
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-
             // Mostrar mensaje de éxito o error si está en la sesión
             <?php if (isset($_SESSION['success'])): ?>
                 showSuccess('<?php echo htmlspecialchars($_SESSION['success']); ?>', 'Éxito', 7000);
@@ -1667,7 +1852,7 @@ if (isset($_POST['rechazar_reserva'])) {
         </script>
     </main>
 
-    <footer class="bg-[#2D3A36] text-white py-4">
+    <footer class="text-white py-4" style="background-color: #2D3A36 !important;">
         <div class="container mx-auto px-4 text-center">
             <p>&copy; <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
         </div>

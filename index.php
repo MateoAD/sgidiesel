@@ -90,6 +90,7 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
 
         .form-panel {
             background: white;
+            transition: opacity 0.35s ease, transform 0.35s ease;
         }
 
         /* Login state */
@@ -347,22 +348,17 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             cursor: pointer;
         }
 
-        /* Animaciones para los formularios */
-        .form-container {
-            transition: all 0.5s ease;
-        }
+        /* Animación suave al alternar formularios en móvil */
+        @keyframes formSwitchIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
 
-        .form-hidden {
-            opacity: 0;
-            height: 0;
-            overflow: hidden;
-            transform: translateX(-20px);
-        }
-
-        .form-visible {
-            opacity: 1;
-            height: auto;
-            transform: translateX(0);
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
              /* Responsive adjustments - Mobile First Approach */
@@ -378,7 +374,7 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             }
             
             header img {
-                height: 14px;
+                height: 40px;
                 margin-right: 0.75rem;
             }
             
@@ -394,13 +390,33 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
         @media (max-width: 768px) {
             .auth-container {
                 width: 95%;
+                max-width: 460px;
                 min-height: auto;
                 margin: 0.5rem auto;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
 
+            .slider-wrapper {
+                width: 100%;
+                transform: none !important;
+            }
+
             .panel {
+                width: 100%;
                 padding: 1.25rem;
+            }
+
+            .welcome-panel {
+                display: none;
+            }
+
+            .form-panel {
+                display: none;
+            }
+
+            .form-panel.mobile-active {
+                display: flex;
+                animation: formSwitchIn 0.35s ease both;
             }
 
             .welcome-title {
@@ -540,7 +556,7 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
 
             /* Optimizar el logo en móviles */
             .container.mx-auto.flex.items-center.px-4.py-3.justify-center img {
-                height: 12px;
+                height: 40px;
                 max-width: 80px;
             }
         }
@@ -612,13 +628,13 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
         <div class="auth-container login-state bg-white" id="authContainer">
             <div class="slider-wrapper">
                 <!-- Login Panel -->
-                <div class="panel form-panel">
+                <div class="panel form-panel" id="loginFormPanel">
                     <div style="max-width: 400px; margin: 0 auto; width: 100%;">
                         <div class="container mx-auto flex items-center px-4 py-3 justify-center">
     <img src="./img/logoSena.png" alt="SENA Logo" class="h-16 w-auto">
 </div>
                         <h2 class="form-title">Iniciar Sesión</h2>
-                        <p class="form-subtitle">SGS de Taller Diesel</p>
+                        <p class="form-subtitle">SGI Taller Diesel</p>
 
                         <form id="loginForm">
                             <div id="loginErrorMessage" class="error-message hidden"></div>
@@ -668,7 +684,7 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
                 </div>
 
                 <!-- Register Panel -->
-                <div class="panel form-panel">
+                <div class="panel form-panel" id="registerFormPanel">
                     <div style="max-width: 400px; margin: 0 auto; width: 100%;">
                         <h2 class="form-title">Crear Cuenta</h2>
                         <p class="form-subtitle">Únete a nuestro sistema</p>
@@ -807,11 +823,31 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
         const showLoginForm = document.getElementById('showLoginForm');
         const loginWelcomeBtn = document.getElementById('loginWelcomeBtn');
         const registerWelcomeBtn = document.getElementById('registerWelcomeBtn');
+        const loginFormPanel = document.getElementById('loginFormPanel');
+        const registerFormPanel = document.getElementById('registerFormPanel');
+
+        function applyResponsiveFormState() {
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const isLoginState = authContainer.classList.contains('login-state');
+
+            if (isMobile) {
+                loginFormPanel.classList.toggle('mobile-active', isLoginState);
+                registerFormPanel.classList.toggle('mobile-active', !isLoginState);
+                return;
+            }
+
+            loginFormPanel.classList.remove('mobile-active');
+            registerFormPanel.classList.remove('mobile-active');
+        }
 
         function toggleForms() {
             authContainer.classList.toggle('login-state');
             authContainer.classList.toggle('register-state');
+            applyResponsiveFormState();
         }
+
+        applyResponsiveFormState();
+        window.addEventListener('resize', applyResponsiveFormState);
 
         showRegisterForm.addEventListener('click', function (e) {
             e.preventDefault();
@@ -1221,6 +1257,11 @@ if (isset($_SESSION['authenticated']) && $_SESSION['authenticated']) {
             errorMessage.classList.remove('hidden');
         }
     </script>
+    <footer class="bg-[#2D3A36] text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 
 </html>

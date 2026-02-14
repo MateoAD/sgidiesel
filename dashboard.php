@@ -252,7 +252,7 @@ require_once 'includes/auth_check.php';
     </style>
 </head>
 
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen flex flex-col">
 
     <!-- Modal System -->
     <div id="modalSystem" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
@@ -450,8 +450,8 @@ require_once 'includes/auth_check.php';
             <div class="flex items-center space-x-6">
                 <!-- Perfil de usuario con nombre -->
                 <div class="flex items-center bg-[#3A9171] px-4 py-2 rounded-full shadow-md">
-                    <i class="fas fa-user-circle text-2xl mr-2 text-white"></i>
-                    <span class="font-medium text-white whitespace-nowrap">
+                    <i class="fas fa-user-circle text-2xl mr-2 text-white hidden sm:inline-block"></i>
+                    <span class="font-medium text-white whitespace-nowrap hidden sm:inline">
                         <?php
                         require_once 'includes/database.php';
                         $userId = $_SESSION['user_id'];
@@ -462,7 +462,7 @@ require_once 'includes/auth_check.php';
                         ?>
                     </span>
                     <a href="perfil.php"
-                        class="ml-2 bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded-full transition-all"
+                        class="sm:ml-2 bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded-full transition-all"
                         title="Mi Perfil">
                         <i class="fas fa-cog text-white"></i>
                     </a>
@@ -504,7 +504,7 @@ require_once 'includes/auth_check.php';
     </header>
 
     <!-- Main Content -->
-    <div class="container mx-auto p-6">
+    <div class="container mx-auto p-6 flex-1 w-full">
         <!-- Panel Principal -->
         <div
             class="polymorphic-container bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-2xl shadow-lg mb-8 transition-all duration-500 hover:shadow-xl">
@@ -747,6 +747,7 @@ require_once 'includes/auth_check.php';
                 </table>
             </div>
         </div>
+    </div>
 
         <!-- Scripts -->
         <script>
@@ -1191,15 +1192,29 @@ require_once 'includes/auth_check.php';
                     let html = '';
                     data.audits.forEach(audit => {
                         let detalles = audit.detalles_formateados;
+                        let isLoginEvent = false;
                         try {
                             if (typeof detalles === 'string') {
                                 detalles = JSON.parse(detalles);
                             }
 
+                            isLoginEvent = audit.accion === 'crear'
+                                && audit.tabla_afectada.includes('usuarios')
+                                && (
+                                    detalles?.es_inicio_sesion
+                                    || (
+                                        typeof detalles?.descripcion === 'string'
+                                        && detalles.descripcion.toLowerCase().includes('inicio de sesi')
+                                    )
+                                );
+
                             if (audit.accion === 'crear' && audit.tabla_afectada.includes('usuarios')) {
+                                const tituloDetalle = isLoginEvent
+                                    ? (detalles.descripcion || 'Inicio de sesion exitoso')
+                                    : (detalles.descripcion || 'Nuevo usuario registrado');
                                 detalles = `
                                     <div class="flex flex-col">
-                                        <span class="font-medium">${detalles.descripcion || 'Nuevo usuario registrado'}</span>
+                                        <span class="font-medium">${tituloDetalle}</span>
                                         ${detalles.usuario ? `<span class="text-xs">Usuario: ${detalles.usuario}</span>` : ''}
                                         ${detalles.rol ? `<span class="text-xs">Rol: ${detalles.rol}</span>` : ''}
                                     </div>
@@ -1249,7 +1264,17 @@ require_once 'includes/auth_check.php';
                             'default': { icon: 'fa-info-circle', bgColor: 'bg-grey-50 hover:bg-grey-100', textColor: 'text-grey-800', borderColor: 'border-grey-200', text: 'Acción' }
                         };
 
-                        const config = actionConfig[audit.accion] || actionConfig.default;
+                        const loginActionConfig = {
+                            icon: 'fa-right-to-bracket',
+                            bgColor: 'bg-cyan-50 hover:bg-cyan-100',
+                            textColor: 'text-cyan-800',
+                            borderColor: 'border-cyan-200',
+                            text: 'Inicio de sesion'
+                        };
+
+                        const config = isLoginEvent
+                            ? loginActionConfig
+                            : (actionConfig[audit.accion] || actionConfig.default);
 
                         html += `
                             <tr class="${config.bgColor} border-b ${config.borderColor} transition-colors duration-150">
@@ -1492,6 +1517,12 @@ require_once 'includes/auth_check.php';
                 cargarAuditoria();
             });
         </script>
+    <footer class="text-white py-4" style="background-color: #2D3A36 !important;">
+        <div class="container mx-auto px-4 text-center">
+            <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 
 </html>
+

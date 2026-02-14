@@ -943,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         class="w-full px-4 py-2 border rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 hover:shadow-md">
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex flex-col md:flex-row w-full md:w-auto gap-3">
                   <button onclick="window.mostrarModal('modalEditar', 'Agregar Herramienta')"
     class="polymorphic-button w-full md:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
     <i class="fas fa-plus mr-2"></i> Agregar Herramienta
@@ -1242,6 +1242,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
 
             <!-- Modal de Baja de Herramienta -->
             <div id="modalBajaHerramienta"
@@ -1667,6 +1669,11 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     </div>
 </div>
+<footer class="bg-[#2D3A36] text-white py-4">
+    <div class="container mx-auto px-4 text-center">
+        <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+    </div>
+</footer>
 </body>
 
 

@@ -585,6 +585,11 @@ FROM herramientas_no_consumibles");
                 });
         });
     </script>
+    <footer class="bg-[#2D3A36] text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 
 </html>

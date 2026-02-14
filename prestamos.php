@@ -361,6 +361,34 @@ require_once 'includes/auth_check.php';
         </div>
     </main>
 
+    <!-- Modal de confirmación de préstamo -->
+    <div id="modal-confirmar-prestamo" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
+            <div class="flex items-center justify-between border-b px-5 py-4">
+                <h3 class="text-lg font-semibold text-gray-800">Confirmar préstamo</h3>
+                <button id="btn-cerrar-modal-prestamo" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="px-5 py-4 space-y-3 text-sm text-gray-700">
+                <p class="text-gray-800 font-medium">Verifica la información antes de registrar.</p>
+                <div id="confirm-prestamo-info" class="bg-gray-50 rounded-lg p-3 space-y-1"></div>
+                <div class="flex items-center">
+                    <span class="mr-2 font-medium text-gray-600">Estado:</span>
+                    <span id="confirm-prestamo-estado" class="px-2 py-1 rounded-full text-xs font-semibold"></span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t px-5 py-4">
+                <button id="btn-cancelar-prestamo-modal" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">
+                    Cancelar
+                </button>
+                <button id="btn-confirmar-prestamo" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white">
+                    Confirmar préstamo
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Scripts -->
     <script>
@@ -373,6 +401,8 @@ require_once 'includes/auth_check.php';
             let videoElement = null;
             let canvasElement = null;
             let canvasContext = null;
+            let prestamoPendiente = null;
+            let confirmandoPrestamo = false;
             // Elementos del DOM
             // Elementos del DOM
             const btnEscanear = document.getElementById('btn-escanear');
@@ -384,6 +414,12 @@ require_once 'includes/auth_check.php';
             const btnPrestar = document.getElementById('btn-prestar');
             const mensajePrestamo = document.getElementById('mensaje-prestamo');
             const mensajeTexto = document.getElementById('mensaje-texto');
+            const modalConfirmPrestamo = document.getElementById('modal-confirmar-prestamo');
+            const confirmPrestamoInfo = document.getElementById('confirm-prestamo-info');
+            const confirmPrestamoEstado = document.getElementById('confirm-prestamo-estado');
+            const btnConfirmarPrestamo = document.getElementById('btn-confirmar-prestamo');
+            const btnCancelarPrestamoModal = document.getElementById('btn-cancelar-prestamo-modal');
+            const btnCerrarModalPrestamo = document.getElementById('btn-cerrar-modal-prestamo');
 
             // Cargar lista de aprendices al iniciar
             cargarAprendices();
@@ -391,6 +427,14 @@ require_once 'includes/auth_check.php';
             // Evento para escanear herramienta
             btnEscanear.addEventListener('click', toggleScanner);
             codigoBarras.addEventListener('change', buscarPorCodigo);
+            btnConfirmarPrestamo.addEventListener('click', confirmarPrestamo);
+            btnCancelarPrestamoModal.addEventListener('click', cerrarModalConfirmacionPrestamo);
+            btnCerrarModalPrestamo.addEventListener('click', cerrarModalConfirmacionPrestamo);
+            modalConfirmPrestamo.addEventListener('click', function (event) {
+                if (event.target === modalConfirmPrestamo) {
+                    cerrarModalConfirmacionPrestamo();
+                }
+            });
 
             // Autocompletado para aprendices
             inputAprendiz.addEventListener('input', function () {
@@ -621,20 +665,69 @@ require_once 'includes/auth_check.php';
                 mostrarMensaje(`Aprendiz seleccionado: ${aprendiz.nombre}`, 'success');
             }
 
+            function mostrarModalConfirmacionPrestamo(payload) {
+                const estadoStock = payload.cantidad >= herramientaActual.cantidad
+                    ? { texto: 'Ultimas unidades disponibles', clases: 'bg-yellow-100 text-yellow-800' }
+                    : { texto: 'Disponible', clases: 'bg-green-100 text-green-800' };
+
+                confirmPrestamoInfo.innerHTML = `
+                    <p><strong>Herramienta:</strong> ${herramientaActual.nombre}</p>
+                    <p><strong>Tipo:</strong> ${herramientaActual.tipo === 'consumible' ? 'Consumible' : 'No consumible'}</p>
+                    <p><strong>Aprendiz:</strong> ${aprendizActual.nombre}</p>
+                    <p><strong>Ficha:</strong> ${aprendizActual.ficha}</p>
+                    <p><strong>Cantidad:</strong> ${payload.cantidad}</p>
+                    <p><strong>Stock actual:</strong> ${herramientaActual.cantidad}</p>
+                `;
+
+                confirmPrestamoEstado.className = `px-2 py-1 rounded-full text-xs font-semibold ${estadoStock.clases}`;
+                confirmPrestamoEstado.textContent = estadoStock.texto;
+
+                modalConfirmPrestamo.classList.remove('hidden');
+                modalConfirmPrestamo.classList.add('flex');
+            }
+
+            function cerrarModalConfirmacionPrestamo() {
+                modalConfirmPrestamo.classList.add('hidden');
+                modalConfirmPrestamo.classList.remove('flex');
+                confirmandoPrestamo = false;
+                prestamoPendiente = null;
+            }
+
+            function confirmarPrestamo() {
+                confirmandoPrestamo = true;
+                modalConfirmPrestamo.classList.add('hidden');
+                modalConfirmPrestamo.classList.remove('flex');
+                btnPrestar.click();
+            }
+
             // Registrar préstamo
             btnPrestar.addEventListener('click', async function () {
                 if (!validarPrestamo()) return;
+
+                if (!confirmandoPrestamo) {
+                    prestamoPendiente = {
+                        herramienta_id: herramientaActual.id,
+                        herramienta_tipo: herramientaActual.tipo,
+                        aprendiz_id: aprendizActual.id,
+                        cantidad: parseInt(document.getElementById('cantidad-prestamo').value, 10),
+                        descripcion: document.getElementById('descripcion-prestamo').value.trim()
+                    };
+                    mostrarModalConfirmacionPrestamo(prestamoPendiente);
+                    return;
+                }
+
+                confirmandoPrestamo = false;
 
                 try {
                     btnPrestar.disabled = true;
                     btnPrestar.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Procesando...';
 
-                    const payload = {
+                    const payload = prestamoPendiente || {
                         herramienta_id: herramientaActual.id,
                         herramienta_tipo: herramientaActual.tipo,
                         aprendiz_id: aprendizActual.id,
-                        cantidad: document.getElementById('cantidad-prestamo').value,
-                        descripcion: document.getElementById('descripcion-prestamo').value
+                        cantidad: parseInt(document.getElementById('cantidad-prestamo').value, 10),
+                        descripcion: document.getElementById('descripcion-prestamo').value.trim()
                     };
 
                     const response = await fetch('includes/registrar_prestamo.php', {
@@ -667,6 +760,8 @@ require_once 'includes/auth_check.php';
                     mostrarMensaje(error.message, 'error');
 
                 } finally {
+                    confirmandoPrestamo = false;
+                    prestamoPendiente = null;
                     btnPrestar.disabled = false;
                     btnPrestar.innerHTML = `
             <div class="relative">
@@ -740,6 +835,11 @@ require_once 'includes/auth_check.php';
             }
         });
     </script>
+    <footer class="bg-[#2D3A36] text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>© <?= date('Y') ?> SENA - Sistema de Gestión de Inventarios. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 
 </html>
